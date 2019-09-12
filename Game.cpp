@@ -1,5 +1,6 @@
 #include "Game.h"
 #include "Vertex.h"
+#include <time.h>
 
 // For the DirectX Math library
 using namespace DirectX;
@@ -46,6 +47,11 @@ Game::~Game()
 	delete vertexShader;
 	delete pixelShader;
 
+	// Delete the entities
+	for (Entity* entity : entities) {
+		delete entity;
+	}
+
 	// Delete the mesh objects
 	delete triangle;
 	delete cube;
@@ -58,12 +64,17 @@ Game::~Game()
 // --------------------------------------------------------
 void Game::Init()
 {
+	srand(time(0));
+
+
 	// Helper methods for loading shaders, creating some basic
 	// geometry to draw and some simple camera matrices.
 	//  - You'll be expanding and/or replacing these later
 	LoadShaders();
 	CreateMatrices();
 	CreateBasicGeometry();
+	CreateEntities();
+
 
 	// Tell the input assembler stage of the pipeline what kind of
 	// geometric primitives (points, lines or triangles) we want to draw.  
@@ -110,7 +121,7 @@ void Game::CreateMatrices()
 	//    camera and the direction vector along which to look (as well as "up")
 	// - Another option is the LOOK AT function, to look towards a specific
 	//    point in 3D space
-	XMVECTOR pos = XMVectorSet(2, 2, -5, 0);
+	XMVECTOR pos = XMVectorSet(0, 0, -5, 0);
 	XMVECTOR dir = XMVectorSet(0, 0, 1, 0);
 	XMVECTOR up = XMVectorSet(0, 1, 0, 0);
 	XMMATRIX V = XMMatrixLookToLH(
@@ -147,9 +158,9 @@ void Game::CreateBasicGeometry()
 	//    over to a DirectX-controlled data structure (the vertex buffer)
 	Vertex triVertices[] =
 	{
-		{ XMFLOAT3(+2.0f, +3.0f, +0.0f), red },
-		{ XMFLOAT3(+3.5f, +1.0f, +0.0f), blue },
-		{ XMFLOAT3(0.5f, +1.0f, +0.0f), green },
+		{ XMFLOAT3(+0.0f, +1.0f, +0.0f), red },
+		{ XMFLOAT3(+1.5f, -1.0f, +0.0f), blue },
+		{ XMFLOAT3(-1.5f, -1.0f, +0.0f), green },
 	};
 
 	// Set up the indices, which tell us which vertices to use and in which order
@@ -195,7 +206,7 @@ void Game::CreateBasicGeometry()
 	float height = radius * sqrt(3.0f) * 0.5f;
 	float halfR = radius / 2.0f;
 
-	XMFLOAT3 offset(4, 3, 0);
+	XMFLOAT3 offset(0, 0, 0);
 
 	Vertex hexVertices[] =
 	{
@@ -218,6 +229,23 @@ void Game::CreateBasicGeometry()
 	hexagon = new Mesh(hexVertices, sizeof(hexVertices) / sizeof(Vertex), hexIndices, sizeof(hexIndices) / sizeof(int), device);
 }
 
+
+void Game::CreateEntities()
+{
+	entities.push_back(new Entity(cube));
+	entities.push_back(new Entity(cube));
+	entities.push_back(new Entity(cube));
+	entities.push_back(new Entity(hexagon));
+	entities.push_back(new Entity(triangle));
+
+	for (int i = 0; i < entities.size(); ++i) {
+		int movement = rand() % MAX_MOVEMENTS;
+		movements.push_back(movement);
+	}
+
+	translationX = 1;
+
+}
 
 // --------------------------------------------------------
 // Handle resizing DirectX "stuff" to match the new window size.
@@ -245,6 +273,44 @@ void Game::Update(float deltaTime, float totalTime)
 	// Quit if the escape key is pressed
 	if (GetAsyncKeyState(VK_ESCAPE))
 		Quit();
+
+	for (int i = 0; i < entities.size(); ++i) {
+
+
+		switch (movements[i])
+		{
+		case Movement::Translate:
+			if (entities[i]->GetPosition().x > 4)
+				translationX = abs(translationX) * -1;
+			if (entities[i]->GetPosition().x < -4)
+				translationX = abs(translationX);
+
+			entities[i]->Translate(XMFLOAT3(translationX * deltaTime, 0, 0));
+			break;
+		case Movement::Rotate:
+			XMVECTOR rotationVec;
+			if (entities[i]->GetMesh() == cube) {
+				rotationVec = XMQuaternionRotationRollPitchYaw(deltaTime, deltaTime, 0.0f);
+			}
+			else {
+				rotationVec = XMQuaternionRotationRollPitchYaw(0, 0, deltaTime);
+			}
+			XMFLOAT4 rotation;
+			XMStoreFloat4(&rotation, rotationVec);
+			entities[i]->Rotate(rotation);
+			break;
+		case Movement::Scale:
+		{
+			float scale = sin(totalTime);
+			XMFLOAT3 scaleData;
+			XMStoreFloat3(&scaleData, XMVectorSet(scale, scale, scale, 0));
+			entities[i]->SetScale(scaleData);
+			break;
+		}
+		default:
+			break;
+		}
+	}
 }
 
 // --------------------------------------------------------
@@ -292,33 +358,17 @@ void Game::Draw(float deltaTime, float totalTime)
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
 
-	// Draw the triangle
-	ID3D11Buffer* triVertexBuffer = triangle->GetVertexBuffer();
-	context->IASetVertexBuffers(0, 1, &triVertexBuffer, &stride, &offset);
-	context->IASetIndexBuffer(triangle->GetIndexBuffer(), DXGI_FORMAT_R32_UINT, 0);
+	// Draw each entity
+	for (Entity* entity : entities) {
+		entity->RecalculateWorldMatrix();
+		vertexShader->SetMatrix4x4("world", entity->GetWorldMatrix());
+		vertexShader->CopyAllBufferData();
 
-	// Finally do the actual drawing
-	//  - Do this ONCE PER OBJECT you intend to draw
-	//  - This will use all of the currently set DirectX "stuff" (shaders, buffers, etc)
-	//  - DrawIndexed() uses the currently set INDEX BUFFER to look up corresponding
-	//     vertices in the currently set VERTEX BUFFER
-	context->DrawIndexed(
-		triangle->GetIndexCount(),     // The number of indices to use (we could draw a subset if we wanted)
-		0,     // Offset to the first index we want to use
-		0);    // Offset to add to each index when looking up vertices
-
-	// Draw the cube
-	ID3D11Buffer* cubeVertexBuffer = cube->GetVertexBuffer();
-	context->IASetVertexBuffers(0, 1, &cubeVertexBuffer, &stride, &offset);
-	context->IASetIndexBuffer(cube->GetIndexBuffer(), DXGI_FORMAT_R32_UINT, 0);
-	context->DrawIndexed(cube->GetIndexCount(), 0, 0);
-
-	// Draw the hexagon
-	ID3D11Buffer* hexVertexBuffer = hexagon->GetVertexBuffer();
-	context->IASetVertexBuffers(0, 1, &hexVertexBuffer, &stride, &offset);
-	context->IASetIndexBuffer(hexagon->GetIndexBuffer(), DXGI_FORMAT_R32_UINT, 0);
-	context->DrawIndexed(hexagon->GetIndexCount(), 0, 0);
-
+		ID3D11Buffer* entityVB = entity->GetMesh()->GetVertexBuffer();
+		context->IASetVertexBuffers(0, 1, &entityVB, &stride, &offset);
+		context->IASetIndexBuffer(entity->GetMesh()->GetIndexBuffer(), DXGI_FORMAT_R32_UINT, 0);
+		context->DrawIndexed(entity->GetMesh()->GetIndexCount(), 0, 0);
+	}
 
 	// Present the back buffer to the user
 	//  - Puts the final frame we're drawing into the window so the user can see it

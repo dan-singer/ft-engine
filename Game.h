@@ -4,6 +4,14 @@
 #include "SimpleShader.h"
 #include <DirectXMath.h>
 #include "Mesh.h"
+#include "Entity.h"
+
+enum Movement {
+	Translate = 0,
+	Rotate,
+	Scale,
+	MAX_MOVEMENTS
+};
 
 class Game 
 	: public DXCore
@@ -31,11 +39,18 @@ private:
 	void LoadShaders(); 
 	void CreateMatrices();
 	void CreateBasicGeometry();
+	void CreateEntities();
+
 
 	// Mesh pointers
 	Mesh* triangle = nullptr;
 	Mesh* cube = nullptr;
 	Mesh* hexagon = nullptr;
+
+	// Entities
+	std::vector<Entity*> entities;
+	std::vector<int> movements;
+	float translationX;
 
 	// Wrappers for DirectX shaders to provide simplified functionality
 	SimpleVertexShader* vertexShader;
