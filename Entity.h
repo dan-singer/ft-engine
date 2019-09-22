@@ -66,6 +66,12 @@ public:
 	// --------------------------------------------------------
 	void RecalculateWorldMatrix(bool force = false);
 
+	// --------------------------------------------------------
+	// Sets material's vertex and shader buffer data based on this entity and the camera.
+	// Call this before drawing an entity
+	// @param DirectX::XMFLOAT4X4 view View matrix to send to the vertex shader
+	// @param DirectX::XMFLOAT4X4 projection Projection matrix to send to the vertex shader
+	// --------------------------------------------------------
 	void PrepareMaterial(DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 projection);
 
 

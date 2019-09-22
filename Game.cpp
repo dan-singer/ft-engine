@@ -70,7 +70,7 @@ Game::~Game()
 // --------------------------------------------------------
 void Game::Init()
 {
-	srand(time(0));
+	srand(time((time_t)0));
 
 
 	// Helper methods for loading shaders, creating some basic

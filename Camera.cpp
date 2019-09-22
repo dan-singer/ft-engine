@@ -2,9 +2,10 @@
 #include <Windows.h>
 using namespace DirectX;
 
-Camera::Camera()
+Camera::Camera() : m_position(0,0,0), m_direction(0,0,0)
 {
-
+	XMStoreFloat4x4(&m_view, XMMatrixIdentity());
+	XMStoreFloat4x4(&m_projection, XMMatrixIdentity());
 }
 
 void Camera::Rotate(float pitch, float yaw)
@@ -26,6 +27,7 @@ void Camera::Update(float deltaTime)
 
 	// Handle input
 	// TODO create an InputManager Singleton
+	// TODO make camera more general
 	XMVECTOR position = XMLoadFloat3(&m_position);
 	XMVECTOR translation = XMVectorSet(0, 0, 0, 0);
 	if (GetAsyncKeyState('W') & 0x8000) {

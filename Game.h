@@ -53,10 +53,10 @@ private:
 	float translationX;
 
 	// Camera
-	Camera* camera;
+	Camera* camera = nullptr;
 
 	// Materials
-	Material* standardMaterial;
+	Material* standardMaterial = nullptr;
 
 	// Wrappers for DirectX shaders to provide simplified functionality
 	SimpleVertexShader* vertexShader;
