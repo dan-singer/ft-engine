@@ -2,7 +2,7 @@
 
 using namespace DirectX;
 
-Entity::Entity(Mesh* mesh) : m_position(), m_scale(1,1,1), m_mesh(mesh)
+Entity::Entity(Mesh* mesh, Material* material) : m_position(), m_scale(1,1,1), m_mesh(mesh), m_material(material)
 {
 	XMStoreFloat4(&m_rotation, XMQuaternionIdentity());
 	XMStoreFloat4x4(&m_world, XMMatrixIdentity());
@@ -71,6 +71,21 @@ void Entity::RecalculateWorldMatrix(bool force)
 
 		m_worldDirty = false;
 	}
+}
+
+void Entity::PrepareMaterial(XMFLOAT4X4 view, XMFLOAT4X4 projection)
+{
+	SimpleVertexShader* vs = m_material->GetVertexShader();
+	SimplePixelShader* ps = m_material->GetPixelShader();
+
+	vs->SetMatrix4x4("world", GetWorldMatrix());
+	vs->SetMatrix4x4("view", view);
+	vs->SetMatrix4x4("projection", projection);
+	vs->SetShader();
+	vs->CopyAllBufferData();
+
+	ps->SetShader();
+	ps->CopyAllBufferData();
 }
 
 Entity::~Entity()

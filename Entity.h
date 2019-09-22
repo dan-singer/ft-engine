@@ -2,6 +2,7 @@
 
 #include <DirectXMath.h>
 #include "Mesh.h"
+#include "Material.h"
 
 // --------------------------------------------------------
 // Base Entity class which contains world matrix information
@@ -15,9 +16,10 @@ private:
 	DirectX::XMFLOAT3 m_scale;
 	DirectX::XMFLOAT4 m_rotation;
 	Mesh* m_mesh;
+	Material* m_material;
 	bool m_worldDirty = true;
 public:
-	Entity(Mesh* mesh);
+	Entity(Mesh* mesh, Material* material);
 
 	// Getters
 	DirectX::XMFLOAT3 GetPosition() { return m_position; }
@@ -63,6 +65,9 @@ public:
 	// @returns void
 	// --------------------------------------------------------
 	void RecalculateWorldMatrix(bool force = false);
+
+	void PrepareMaterial(DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 projection);
+
 
 	virtual ~Entity();
 

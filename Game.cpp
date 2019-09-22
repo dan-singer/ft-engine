@@ -59,6 +59,9 @@ Game::~Game()
 
 	// Delete the camera
 	delete camera;
+
+	// Delete any materials
+	delete standardMaterial;
 }
 
 // --------------------------------------------------------
@@ -80,6 +83,8 @@ void Game::Init()
 	camera->UpdateProjectionMatrix((float)width / height);
 	camera->SetPosition(XMFLOAT3(0, 0, -5));
 
+	
+
 	// Tell the input assembler stage of the pipeline what kind of
 	// geometric primitives (points, lines or triangles) we want to draw.  
 	// Essentially: "What kind of shape should the GPU draw with our data?"
@@ -99,6 +104,8 @@ void Game::LoadShaders()
 
 	pixelShader = new SimplePixelShader(device, context);
 	pixelShader->LoadShaderFile(L"PixelShader.cso");
+
+	standardMaterial = new Material(vertexShader, pixelShader);
 }
 
 
@@ -192,11 +199,11 @@ void Game::CreateBasicGeometry()
 
 void Game::CreateEntities()
 {
-	entities.push_back(new Entity(cube));
-	entities.push_back(new Entity(cube));
-	entities.push_back(new Entity(cube));
-	entities.push_back(new Entity(hexagon));
-	entities.push_back(new Entity(triangle));
+	entities.push_back(new Entity(cube, standardMaterial));
+	entities.push_back(new Entity(cube, standardMaterial));
+	entities.push_back(new Entity(cube, standardMaterial));
+	entities.push_back(new Entity(hexagon, standardMaterial));
+	entities.push_back(new Entity(triangle, standardMaterial));
 
 	for (int i = 0; i < entities.size(); ++i) {
 		int movement = rand() % MAX_MOVEMENTS;
@@ -315,8 +322,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	// Draw each entity
 	for (Entity* entity : entities) {
 		entity->RecalculateWorldMatrix();
-		vertexShader->SetMatrix4x4("world", entity->GetWorldMatrix());
-		vertexShader->CopyAllBufferData();
+		entity->PrepareMaterial(camera->GetViewMatrix(), camera->GetProjectionMatrix());
 
 		ID3D11Buffer* entityVB = entity->GetMesh()->GetVertexBuffer();
 		context->IASetVertexBuffers(0, 1, &entityVB, &stride, &offset);

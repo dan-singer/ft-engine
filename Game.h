@@ -55,6 +55,9 @@ private:
 	// Camera
 	Camera* camera;
 
+	// Materials
+	Material* standardMaterial;
+
 	// Wrappers for DirectX shaders to provide simplified functionality
 	SimpleVertexShader* vertexShader;
 	SimplePixelShader* pixelShader;
