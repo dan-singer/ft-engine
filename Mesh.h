@@ -9,15 +9,26 @@
 class Mesh
 {
 private:
-	ID3D11Buffer* m_vertexBuffer;
-	ID3D11Buffer* m_indexBuffer;
-	int m_indexBufferSize;
+	ID3D11Buffer* m_vertexBuffer = nullptr;
+	ID3D11Buffer* m_indexBuffer = nullptr;
+	int m_indexBufferSize = 0;
+
+	void Initialize(Vertex* vertices, int numVertices, unsigned int* indices, int numIndices, ID3D11Device* device);
+
 public:
 
 	// --------------------------------------------------------
 	// Mesh constructor
 	// --------------------------------------------------------
-	Mesh(Vertex* vertices, int numVertices, int* indices, int numIndices, ID3D11Device* device);
+	Mesh(Vertex* vertices, int numVertices, unsigned int* indices, int numIndices, ID3D11Device* device);
+
+	// --------------------------------------------------------
+	// Construct a mesh from an .obj file
+	// @param const char * file path to file
+	// @param ID3D11Device * device 
+	// --------------------------------------------------------
+	Mesh(const char* file, ID3D11Device* device);
+
 
 	ID3D11Buffer* GetVertexBuffer() { return m_vertexBuffer; }
 	ID3D11Buffer* GetIndexBuffer() { return m_indexBuffer; }

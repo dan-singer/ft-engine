@@ -54,8 +54,10 @@ Game::~Game()
 
 	// Delete the mesh objects
 	delete triangle;
-	delete cube;
 	delete hexagon;
+	delete cube;
+	delete cone;
+	delete cylinder;
 
 	// Delete the camera
 	delete camera;
@@ -70,9 +72,6 @@ Game::~Game()
 // --------------------------------------------------------
 void Game::Init()
 {
-	srand(time((time_t)0));
-
-
 	// Helper methods for loading shaders, creating some basic
 	// geometry to draw and some simple camera matrices.
 	//  - You'll be expanding and/or replacing these later
@@ -83,7 +82,10 @@ void Game::Init()
 	camera->UpdateProjectionMatrix((float)width / height);
 	camera->SetPosition(XMFLOAT3(0, 0, -5));
 
+	directionalLights[0] = { XMFLOAT4(0.1f,0.1f,0.1f,0.1f), XMFLOAT4(0,0,1,1), XMFLOAT3(1,-1,0) };
+	directionalLights[1] = { XMFLOAT4(0.1f,0.1f,0.1f,0.1f), XMFLOAT4(1,0,0,1), XMFLOAT3(-1,-1,0) };
 	
+
 
 	// Tell the input assembler stage of the pipeline what kind of
 	// geometric primitives (points, lines or triangles) we want to draw.  
@@ -114,20 +116,18 @@ void Game::LoadShaders()
 // --------------------------------------------------------
 void Game::CreateBasicGeometry()
 {
-	// Create some temporary variables to represent colors
-	// - Not necessary, just makes things more readable
-	XMFLOAT4 red = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
-	XMFLOAT4 green = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
-	XMFLOAT4 blue = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
+
+	XMFLOAT3 toCamera(0, 0, -1);
+	XMFLOAT2 zeroUV(0, 0);
 
 	// Set up the vertices of the triangle we would like to draw
 	// - We're going to copy this array, exactly as it exists in memory
 	//    over to a DirectX-controlled data structure (the vertex buffer)
 	Vertex triVertices[] =
 	{
-		{ XMFLOAT3(+0.0f, +1.0f, +0.0f), red },
-		{ XMFLOAT3(+1.5f, -1.0f, +0.0f), blue },
-		{ XMFLOAT3(-1.5f, -1.0f, +0.0f), green },
+		{ XMFLOAT3(+0.0f, +1.0f, +0.0f), toCamera, zeroUV },
+		{ XMFLOAT3(+1.5f, -1.0f, +0.0f), toCamera, zeroUV  },
+		{ XMFLOAT3(-1.5f, -1.0f, +0.0f), toCamera, zeroUV  },
 	};
 
 	// Set up the indices, which tell us which vertices to use and in which order
@@ -135,39 +135,9 @@ void Game::CreateBasicGeometry()
 	// - Indices are technically not required if the vertices are in the buffer 
 	//    in the correct order and each one will be used exactly once
 	// - But just to see how it's done...
-	int triIndices[] = { 0, 1, 2 };
+	unsigned int triIndices[] = { 0, 1, 2 };
 
-	triangle = new Mesh(triVertices, sizeof(triVertices) / sizeof(Vertex), triIndices, sizeof(triIndices) / sizeof(int), device);
-
-	Vertex cubeVertices[] =
-	{
-		{ XMFLOAT3(0, 0, 0), red },
-		{ XMFLOAT3(0, 1.0f, 0), blue },
-		{ XMFLOAT3(1.0f, 1.0f, 0), green },
-		{ XMFLOAT3(1.0f, 0, 0), red },
-		{ XMFLOAT3(0, 0, 1.0f), blue },
-		{ XMFLOAT3(0, 1.0f, 1.0f), green },
-		{ XMFLOAT3(1.0f, 1.0f, 1.0f), red },
-		{ XMFLOAT3(1.0f, 0, 1.0f), blue },
-	};
-
-	int cubeIndices[] =
-	{
-		0, 1, 3,
-		1, 2, 3,
-		7, 3, 2,
-		2, 6, 7,
-		7, 6, 4,
-		4, 6, 5,
-		0, 4, 1,
-		4, 5, 1,
-		3, 4, 0,
-		3, 7, 4,
-		5, 2, 1,
-		5, 6, 2
-	};
-
-	cube = new Mesh(cubeVertices, sizeof(cubeVertices) / sizeof(Vertex), cubeIndices, sizeof(cubeIndices) / sizeof(int), device);
+	triangle = new Mesh(triVertices, sizeof(triVertices) / sizeof(Vertex), triIndices, sizeof(triIndices) / sizeof(unsigned int), device);
 
 	float radius = 1;
 	float height = radius * sqrt(3.0f) * 0.5f;
@@ -177,15 +147,15 @@ void Game::CreateBasicGeometry()
 
 	Vertex hexVertices[] =
 	{
-		{ XMFLOAT3(-halfR + offset.x, height + offset.y, 0), red },
-		{ XMFLOAT3(halfR + offset.x, height + offset.y, 0), green },
-		{ XMFLOAT3(radius + offset.x, offset.y, 0), blue },
-		{ XMFLOAT3(halfR + offset.x, -height + offset.y, 0), red },
-		{ XMFLOAT3(-halfR + offset.x, -height + offset.y, 0), green },
-		{ XMFLOAT3(-radius + offset.x, offset.y, 0), blue }
+		{ XMFLOAT3(-halfR + offset.x, height + offset.y, 0), toCamera, zeroUV },
+		{ XMFLOAT3(halfR + offset.x, height + offset.y, 0), toCamera, zeroUV },
+		{ XMFLOAT3(radius + offset.x, offset.y, 0), toCamera, zeroUV },
+		{ XMFLOAT3(halfR + offset.x, -height + offset.y, 0), toCamera, zeroUV },
+		{ XMFLOAT3(-halfR + offset.x, -height + offset.y, 0), toCamera, zeroUV },
+		{ XMFLOAT3(-radius + offset.x, offset.y, 0), toCamera, zeroUV }
 	};
 
-	int hexIndices[] =
+	unsigned int hexIndices[] =
 	{
 		0, 1, 2,
 		0, 2, 3,
@@ -193,25 +163,25 @@ void Game::CreateBasicGeometry()
 		0, 4, 5
 	};
 
-	hexagon = new Mesh(hexVertices, sizeof(hexVertices) / sizeof(Vertex), hexIndices, sizeof(hexIndices) / sizeof(int), device);
+	hexagon = new Mesh(hexVertices, sizeof(hexVertices) / sizeof(Vertex), hexIndices, sizeof(hexIndices) / sizeof(unsigned int), device);
+
+	cone = new Mesh("Assets/Models/cone.obj", device);
+	cube = new Mesh("Assets/Models/cube.obj", device);
+	cylinder = new Mesh("Assets/Models/cylinder.obj", device);
 }
 
 
 void Game::CreateEntities()
 {
-	entities.push_back(new Entity(cube, standardMaterial));
-	entities.push_back(new Entity(cube, standardMaterial));
-	entities.push_back(new Entity(cube, standardMaterial));
-	entities.push_back(new Entity(hexagon, standardMaterial));
-	entities.push_back(new Entity(triangle, standardMaterial));
+	entities.push_back(new Entity(cone, standardMaterial));
+	entities.back()->SetPosition(XMFLOAT3(-2, 0, 0));
 
-	for (int i = 0; i < entities.size(); ++i) {
-		int movement = rand() % MAX_MOVEMENTS;
-		movements.push_back(movement);
-	}
+	entities.push_back(new Entity(cube, standardMaterial));
 
-	translationX = 1;
-
+	entities.push_back(new Entity(cylinder, standardMaterial));
+	entities.back()->SetPosition(XMFLOAT3(2, 0, 0));
+	// entities.push_back(new Entity(hexagon, standardMaterial));
+	// entities.push_back(new Entity(triangle, standardMaterial));
 }
 
 // --------------------------------------------------------
@@ -238,40 +208,12 @@ void Game::Update(float deltaTime, float totalTime)
 
 	for (int i = 0; i < entities.size(); ++i) {
 
+		XMVECTOR rotationVec;
+		rotationVec = XMQuaternionRotationRollPitchYaw(deltaTime, deltaTime, 0.0f);
 
-		switch (movements[i])
-		{
-		case Movement::Translate:
-			if (entities[i]->GetPosition().x > 4)
-				translationX = abs(translationX) * -1;
-			if (entities[i]->GetPosition().x < -4)
-				translationX = abs(translationX);
-
-			entities[i]->Translate(XMFLOAT3(translationX * deltaTime, 0, 0));
-			break;
-		case Movement::Rotate:
-			XMVECTOR rotationVec;
-			if (entities[i]->GetMesh() == cube) {
-				rotationVec = XMQuaternionRotationRollPitchYaw(deltaTime, deltaTime, 0.0f);
-			}
-			else {
-				rotationVec = XMQuaternionRotationRollPitchYaw(0, 0, deltaTime);
-			}
-			XMFLOAT4 rotation;
-			XMStoreFloat4(&rotation, rotationVec);
-			entities[i]->Rotate(rotation);
-			break;
-		case Movement::Scale:
-		{
-			float scale = sin(totalTime);
-			XMFLOAT3 scaleData;
-			XMStoreFloat3(&scaleData, XMVectorSet(scale, scale, scale, 0));
-			entities[i]->SetScale(scaleData);
-			break;
-		}
-		default:
-			break;
-		}
+		XMFLOAT4 rotation;
+		XMStoreFloat4(&rotation, rotationVec);
+		entities[i]->Rotate(rotation);
 	}
 }
 
@@ -293,25 +235,7 @@ void Game::Draw(float deltaTime, float totalTime)
 		1.0f,
 		0);
 
-	// Send data to shader variables
-	//  - Do this ONCE PER OBJECT you're drawing
-	//  - This is actually a complex process of copying data to a local buffer
-	//    and then copying that entire buffer to the GPU.  
-	//  - The "SimpleShader" class handles all of that for you.
-	vertexShader->SetMatrix4x4("view", camera->GetViewMatrix());
-	vertexShader->SetMatrix4x4("projection", camera->GetProjectionMatrix());
-
-	// Once you've set all of the data you care to change for
-	// the next draw call, you need to actually send it to the GPU
-	//  - If you skip this, the "SetMatrix" calls above won't make it to the GPU!
-	vertexShader->CopyAllBufferData();
-
-	// Set the vertex and pixel shaders to use for the next Draw() command
-	//  - These don't technically need to be set every frame...YET
-	//  - Once you start applying different shaders to different objects,
-	//    you'll need to swap the current shaders before each draw
-	vertexShader->SetShader();
-	pixelShader->SetShader();
+	pixelShader->SetData("lights", directionalLights, sizeof(DirectionalLight) * NUM_DIRECTIONAL_LIGHTS);
 
 	// Set buffers in the input assembler
 	//  - Do this ONCE PER OBJECT you're drawing, since each object might
@@ -322,7 +246,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	// Draw each entity
 	for (Entity* entity : entities) {
 		entity->RecalculateWorldMatrix();
-		entity->PrepareMaterial(camera->GetViewMatrix(), camera->GetProjectionMatrix());
+		entity->PrepareMaterial(camera->GetViewMatrix(), camera->GetProjectionMatrix(), camera->GetPosition());
 
 		ID3D11Buffer* entityVB = entity->GetMesh()->GetVertexBuffer();
 		context->IASetVertexBuffers(0, 1, &entityVB, &stride, &offset);

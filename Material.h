@@ -23,3 +23,8 @@ public:
 	SimplePixelShader*  GetPixelShader()  { return m_pixelShader;  }
 };
 
+
+// Material and Shader TODO
+// 1. Implement point lights
+// 2. Implement spot lights
+// 3. Implement surface color in material class

@@ -73,7 +73,7 @@ void Entity::RecalculateWorldMatrix(bool force)
 	}
 }
 
-void Entity::PrepareMaterial(XMFLOAT4X4 view, XMFLOAT4X4 projection)
+void Entity::PrepareMaterial(XMFLOAT4X4 view, XMFLOAT4X4 projection, DirectX::XMFLOAT3 cameraPos)
 {
 	SimpleVertexShader* vs = m_material->GetVertexShader();
 	SimplePixelShader* ps = m_material->GetPixelShader();
@@ -85,6 +85,7 @@ void Entity::PrepareMaterial(XMFLOAT4X4 view, XMFLOAT4X4 projection)
 	vs->CopyAllBufferData();
 
 	ps->SetShader();
+	ps->SetFloat3("cameraPos", cameraPos);
 	ps->CopyAllBufferData();
 }
 

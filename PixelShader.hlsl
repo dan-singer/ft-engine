@@ -1,4 +1,4 @@
-
+static const int lightCount = 2;
 // Struct representing the data we expect to receive from earlier pipeline stages
 // - Should match the output of our corresponding vertex shader
 // - The name of the struct itself is unimportant
@@ -12,7 +12,22 @@ struct VertexToPixel
 	//  |    |                |
 	//  v    v                v
 	float4 position		: SV_POSITION;
-	float4 color		: COLOR;
+	float3 normal		: NORMAL;
+    float3 worldPos		: POSITION;
+};
+
+struct DirectionalLight
+{
+	float4 AmbientColor;
+	float4 DiffuseColor;
+	float3 Direction;
+    float __PADDING;
+};
+
+cbuffer externalData : register(b0)
+{
+    DirectionalLight lights[lightCount];
+    float3 cameraPos;
 };
 
 // --------------------------------------------------------
@@ -22,13 +37,31 @@ struct VertexToPixel
 // - Output is a single color (float4)
 // - Has a special semantic (SV_TARGET), which means 
 //    "put the output of this into the current render target"
-// - Named "main" because that's the default the shader compiler looks for
+// - Named "main" because that's the default the shader compiler looks for5
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
-	// Just return the input color
-	// - This color (like most values passing through the rasterizer) is 
-	//   interpolated for each pixel between the corresponding vertices 
-	//   of the triangle we're rendering
-	return input.color;
+	input.normal = normalize(input.normal);
+    float4 directionalColor = float4(0,0,0,1);
+    float3 toCamera = normalize(cameraPos - input.worldPos);
+	
+    for (int i = 0; i < lightCount; ++i)
+    {
+		// Diffuse
+        float3 toLight = normalize(-lights[i].Direction);
+        float NdotL = saturate(dot(toLight, input.normal));
+        float4 diffuse = lights[i].DiffuseColor * NdotL;
+
+		// Specular
+        float3 h = normalize(toLight + toCamera);
+        float NdotH = saturate(dot(input.normal, h));
+		// TODO make shiniess based on a cbuffer variable, which should be set from a material
+        float specAmt = pow(NdotH, 128.0f);
+		
+        directionalColor += lights[i].AmbientColor + diffuse + specAmt;
+    }
+	
+    return directionalColor;
+
+
 }

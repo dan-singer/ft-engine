@@ -6,13 +6,9 @@
 #include "Mesh.h"
 #include "Entity.h"
 #include "Camera.h"
+#include "Lights.h"
 
-enum Movement {
-	Translate = 0,
-	Rotate,
-	Scale,
-	MAX_MOVEMENTS
-};
+#define NUM_DIRECTIONAL_LIGHTS 2
 
 class Game 
 	: public DXCore
@@ -44,19 +40,22 @@ private:
 
 	// Mesh pointers
 	Mesh* triangle = nullptr;
-	Mesh* cube = nullptr;
 	Mesh* hexagon = nullptr;
+	Mesh* cone = nullptr;
+	Mesh* cube = nullptr;
+	Mesh* cylinder = nullptr;
 
 	// Entities
 	std::vector<Entity*> entities;
-	std::vector<int> movements;
-	float translationX;
 
 	// Camera
 	Camera* camera = nullptr;
 
 	// Materials
 	Material* standardMaterial = nullptr;
+
+	// Lights
+	DirectionalLight directionalLights[NUM_DIRECTIONAL_LIGHTS] = {};
 
 	// Wrappers for DirectX shaders to provide simplified functionality
 	SimpleVertexShader* vertexShader;
