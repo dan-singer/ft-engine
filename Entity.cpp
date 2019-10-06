@@ -84,8 +84,10 @@ void Entity::PrepareMaterial(XMFLOAT4X4 view, XMFLOAT4X4 projection, DirectX::XM
 	vs->SetShader();
 	vs->CopyAllBufferData();
 
-	ps->SetShader();
 	ps->SetFloat3("cameraPos", cameraPos);
+	ps->SetSamplerState("samplerState", m_material->GetSamplerState());
+	ps->SetShaderResourceView("diffuseTexture", m_material->GetShaderResourceView());
+	ps->SetShader();
 	ps->CopyAllBufferData();
 }
 

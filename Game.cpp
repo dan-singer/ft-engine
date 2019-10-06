@@ -1,5 +1,6 @@
 #include "Game.h"
 #include "Vertex.h"
+#include <WICTextureLoader.h>
 #include <time.h>
 
 // For the DirectX Math library
@@ -63,7 +64,16 @@ Game::~Game()
 	delete camera;
 
 	// Delete any materials
-	delete standardMaterial;
+	delete leatherMat;
+	delete metalMat;
+
+	// Delete the sampler state
+	samplerState->Release();
+
+	// Delete textures
+	leatherSRV->Release();
+	metalSRV->Release();
+	
 }
 
 // --------------------------------------------------------
@@ -82,8 +92,7 @@ void Game::Init()
 	camera->UpdateProjectionMatrix((float)width / height);
 	camera->SetPosition(XMFLOAT3(0, 0, -5));
 
-	directionalLights[0] = { XMFLOAT4(0.1f,0.1f,0.1f,0.1f), XMFLOAT4(0,0,1,1), XMFLOAT3(1,-1,0) };
-	directionalLights[1] = { XMFLOAT4(0.1f,0.1f,0.1f,0.1f), XMFLOAT4(1,0,0,1), XMFLOAT3(-1,-1,0) };
+	directionalLights[0] = { XMFLOAT4(0.1f,0.1f,0.1f,0.1f), XMFLOAT4(1,1,1,1), XMFLOAT3(1,-1,0) };
 	
 
 
@@ -107,7 +116,23 @@ void Game::LoadShaders()
 	pixelShader = new SimplePixelShader(device, context);
 	pixelShader->LoadShaderFile(L"PixelShader.cso");
 
-	standardMaterial = new Material(vertexShader, pixelShader);
+	// Create a texture
+	DirectX::CreateWICTextureFromFile(device, context, L"Assets/Textures/Leather.jpg", 0, &leatherSRV);
+	DirectX::CreateWICTextureFromFile(device, context, L"Assets/Textures/BareMetal.png", 0, &metalSRV);
+
+	// Create the sampler state
+	D3D11_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	device->CreateSamplerState(&samplerDesc, &samplerState);
+
+
+	leatherMat = new Material(vertexShader, pixelShader, leatherSRV, samplerState);
+	metalMat = new Material(vertexShader, pixelShader, metalSRV, samplerState);
+
 }
 
 
@@ -173,12 +198,12 @@ void Game::CreateBasicGeometry()
 
 void Game::CreateEntities()
 {
-	entities.push_back(new Entity(cone, standardMaterial));
+	entities.push_back(new Entity(cone, leatherMat));
 	entities.back()->SetPosition(XMFLOAT3(-2, 0, 0));
 
-	entities.push_back(new Entity(cube, standardMaterial));
+	entities.push_back(new Entity(cube, metalMat));
 
-	entities.push_back(new Entity(cylinder, standardMaterial));
+	entities.push_back(new Entity(cylinder, metalMat));
 	entities.back()->SetPosition(XMFLOAT3(2, 0, 0));
 	// entities.push_back(new Entity(hexagon, standardMaterial));
 	// entities.push_back(new Entity(triangle, standardMaterial));

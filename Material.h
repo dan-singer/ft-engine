@@ -11,16 +11,24 @@ class Material
 private:
 	SimpleVertexShader* m_vertexShader;
 	SimplePixelShader* m_pixelShader;
+	ID3D11ShaderResourceView* m_shaderResourceView;
+	ID3D11SamplerState* m_samplerState;
 public:
+
 	// --------------------------------------------------------
-	// Construct a Material from a vertex and pixel shader
-	// @param SimpleVertexShader* vertexShader
-	// @param SimplePixelShader* pixelShader
+	// Construct a Material from shaders and textures
+	// @param SimpleVertexShader * vertexShader
+	// @param SimplePixelShader * pixelShader
+	// @param ID3D11ShaderResourceView * shaderResourceView
+	// @param ID3D11SamplerState * samplerState
 	// --------------------------------------------------------
-	Material(SimpleVertexShader* vertexShader, SimplePixelShader* pixelShader);
+	Material(SimpleVertexShader* vertexShader, SimplePixelShader* pixelShader, 
+		ID3D11ShaderResourceView* shaderResourceView, ID3D11SamplerState* samplerState);
 
 	SimpleVertexShader* GetVertexShader() { return m_vertexShader; }
 	SimplePixelShader*  GetPixelShader()  { return m_pixelShader;  }
+	ID3D11ShaderResourceView* GetShaderResourceView() { return m_shaderResourceView; }
+	ID3D11SamplerState* GetSamplerState() { return m_samplerState; }
 };
 
 
@@ -28,3 +36,4 @@ public:
 // 1. Implement point lights
 // 2. Implement spot lights
 // 3. Implement surface color in material class
+// 4. Implement Normal Mapping

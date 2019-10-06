@@ -1,4 +1,4 @@
-static const int lightCount = 2;
+static const int lightCount = 1;
 // Struct representing the data we expect to receive from earlier pipeline stages
 // - Should match the output of our corresponding vertex shader
 // - The name of the struct itself is unimportant
@@ -14,6 +14,7 @@ struct VertexToPixel
 	float4 position		: SV_POSITION;
 	float3 normal		: NORMAL;
     float3 worldPos		: POSITION;
+	float2 uv			: TEXCOORD;
 };
 
 struct DirectionalLight
@@ -30,6 +31,9 @@ cbuffer externalData : register(b0)
     float3 cameraPos;
 };
 
+Texture2D diffuseTexture : register(t0);
+SamplerState samplerState : register(s0);
+
 // --------------------------------------------------------
 // The entry point (main method) for our pixel shader
 // 
@@ -44,13 +48,15 @@ float4 main(VertexToPixel input) : SV_TARGET
 	input.normal = normalize(input.normal);
     float4 directionalColor = float4(0,0,0,1);
     float3 toCamera = normalize(cameraPos - input.worldPos);
+
+	float4 surfaceColor = diffuseTexture.Sample(samplerState, input.uv);
 	
     for (int i = 0; i < lightCount; ++i)
     {
 		// Diffuse
         float3 toLight = normalize(-lights[i].Direction);
         float NdotL = saturate(dot(toLight, input.normal));
-        float4 diffuse = lights[i].DiffuseColor * NdotL;
+        float4 diffuse = surfaceColor * lights[i].DiffuseColor * NdotL;
 
 		// Specular
         float3 h = normalize(toLight + toCamera);

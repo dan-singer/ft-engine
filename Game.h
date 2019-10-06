@@ -8,7 +8,7 @@
 #include "Camera.h"
 #include "Lights.h"
 
-#define NUM_DIRECTIONAL_LIGHTS 2
+#define NUM_DIRECTIONAL_LIGHTS 1
 
 class Game 
 	: public DXCore
@@ -52,10 +52,21 @@ private:
 	Camera* camera = nullptr;
 
 	// Materials
-	Material* standardMaterial = nullptr;
+	Material* leatherMat = nullptr;
+	Material* metalMat = nullptr;
+
 
 	// Lights
 	DirectionalLight directionalLights[NUM_DIRECTIONAL_LIGHTS] = {};
+
+	// Sampler State
+	ID3D11SamplerState* samplerState = nullptr;
+
+
+	// Textures 
+	ID3D11ShaderResourceView* leatherSRV = nullptr;
+	ID3D11ShaderResourceView* metalSRV = nullptr;
+
 
 	// Wrappers for DirectX shaders to provide simplified functionality
 	SimpleVertexShader* vertexShader;
