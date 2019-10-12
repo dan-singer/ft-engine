@@ -2,6 +2,8 @@
 #include "Vertex.h"
 #include <WICTextureLoader.h>
 #include <time.h>
+#include "CTransform.h"
+#include "ComponentManager.h"
 
 // For the DirectX Math library
 using namespace DirectX;
@@ -198,13 +200,16 @@ void Game::CreateBasicGeometry()
 
 void Game::CreateEntities()
 {
-	entities.push_back(new Entity(cone, leatherMat));
-	entities.back()->SetPosition(XMFLOAT3(-2, 0, 0));
+	entities.push_back(new Entity());
+	CTransform* transform = ComponentManager<CTransform>::Get()->AddComponent(entities.back());
+	transform->SetPosition(XMFLOAT3(-2, 0, 0));
+	transform->m_mesh = cube;
+	transform->m_material = metalMat;
 
-	entities.push_back(new Entity(cube, metalMat));
+	//entities.push_back(new Entity(cube, metalMat));
 
-	entities.push_back(new Entity(cylinder, metalMat));
-	entities.back()->SetPosition(XMFLOAT3(2, 0, 0));
+	//entities.push_back(new Entity(cylinder, metalMat));
+	//entities.back()->SetPosition(XMFLOAT3(2, 0, 0));
 	// entities.push_back(new Entity(hexagon, standardMaterial));
 	// entities.push_back(new Entity(triangle, standardMaterial));
 }
@@ -231,6 +236,9 @@ void Game::Update(float deltaTime, float totalTime)
 
 	camera->Update(deltaTime);
 
+
+
+	/*
 	for (int i = 0; i < entities.size(); ++i) {
 
 		XMVECTOR rotationVec;
@@ -240,6 +248,7 @@ void Game::Update(float deltaTime, float totalTime)
 		XMStoreFloat4(&rotation, rotationVec);
 		entities[i]->Rotate(rotation);
 	}
+	*/
 }
 
 // --------------------------------------------------------
@@ -270,13 +279,14 @@ void Game::Draw(float deltaTime, float totalTime)
 
 	// Draw each entity
 	for (Entity* entity : entities) {
-		entity->RecalculateWorldMatrix();
-		entity->PrepareMaterial(camera->GetViewMatrix(), camera->GetProjectionMatrix(), camera->GetPosition());
+		CTransform* transform = ComponentManager<CTransform>::Get()->GetComponent(entity);
+		transform->RecalculateWorldMatrix();
+		transform->PrepareMaterial(camera->GetViewMatrix(), camera->GetProjectionMatrix(), camera->GetPosition());
 
-		ID3D11Buffer* entityVB = entity->GetMesh()->GetVertexBuffer();
+		ID3D11Buffer* entityVB = transform->GetMesh()->GetVertexBuffer();
 		context->IASetVertexBuffers(0, 1, &entityVB, &stride, &offset);
-		context->IASetIndexBuffer(entity->GetMesh()->GetIndexBuffer(), DXGI_FORMAT_R32_UINT, 0);
-		context->DrawIndexed(entity->GetMesh()->GetIndexCount(), 0, 0);
+		context->IASetIndexBuffer(transform->GetMesh()->GetIndexBuffer(), DXGI_FORMAT_R32_UINT, 0);
+		context->DrawIndexed(transform->GetMesh()->GetIndexCount(), 0, 0);
 	}
 
 	// Present the back buffer to the user
