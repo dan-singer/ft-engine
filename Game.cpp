@@ -4,6 +4,7 @@
 #include <time.h>
 #include "CTransform.h"
 #include "ComponentManager.h"
+#include "SRotator.h"
 
 // For the DirectX Math library
 using namespace DirectX;
@@ -96,7 +97,7 @@ void Game::Init()
 
 	directionalLights[0] = { XMFLOAT4(0.1f,0.1f,0.1f,0.1f), XMFLOAT4(1,1,1,1), XMFLOAT3(1,-1,0) };
 	
-
+	systems.push_back(new SRotator());
 
 	// Tell the input assembler stage of the pipeline what kind of
 	// geometric primitives (points, lines or triangles) we want to draw.  
@@ -236,7 +237,9 @@ void Game::Update(float deltaTime, float totalTime)
 
 	camera->Update(deltaTime);
 
-
+	for (SSystem* system : systems) {
+		system->Update(entities, deltaTime);
+	}
 
 	/*
 	for (int i = 0; i < entities.size(); ++i) {

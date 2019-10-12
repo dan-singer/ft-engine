@@ -7,6 +7,7 @@
 #include "Entity.h"
 #include "Camera.h"
 #include "Lights.h"
+#include "SSystem.h"
 
 #define NUM_DIRECTIONAL_LIGHTS 1
 
@@ -47,6 +48,9 @@ private:
 
 	// Entities
 	std::vector<Entity*> entities;
+
+	// Systems
+	std::vector<SSystem*> systems;
 
 	// Camera
 	Camera* camera = nullptr;
