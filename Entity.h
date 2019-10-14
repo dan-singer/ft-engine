@@ -7,6 +7,7 @@
 #include <string>
 #include <unordered_set>
 #include <algorithm>
+#include "MaterialComponent.h"
 
 
 // --------------------------------------------------------
@@ -20,9 +21,10 @@ protected:
 	std::string m_name;
 	std::unordered_set<std::string> m_tags;
 
-	// Shortcut references to common components 
+	// "Shortcut" references to common components 
 	Transform* m_transform = nullptr;
 	MeshComponent* m_meshComponent = nullptr;
+	MaterialComponent* m_materialComponent = nullptr;
 public:
 
 
@@ -37,10 +39,17 @@ public:
 	{
 		T* newComponent = new T(this);
 		m_components.push_back(newComponent);
+
+		// Use these to build references to the "shortcut" pointers
 		MeshComponent* castedMesh = dynamic_cast<MeshComponent*>(newComponent);
 		if (castedMesh) {
 			m_meshComponent = castedMesh;
 		}
+		MaterialComponent* castedMaterial = dynamic_cast<MaterialComponent*>(newComponent);
+		if (castedMaterial) {
+			m_materialComponent = castedMaterial;
+		}
+
 		return newComponent;
 	}
 
@@ -88,12 +97,28 @@ public:
 
 	Transform* GetTransform() { return m_transform; }
 
-	
 	// --------------------------------------------------------
 	// Returns the mesh component attached to this Entity.
 	// Note that this CAN be nullptr if a mesh hasn't been attached.
 	// --------------------------------------------------------
 	Mesh* GetMesh() { return m_meshComponent ? m_meshComponent->m_mesh : nullptr; }
+
+    // --------------------------------------------------------
+	// Returns the material component attached to this Entity.
+	// Note that this CAN be nullptr if a material hasn't been attached.
+	// --------------------------------------------------------
+	Material* GetMaterial() { return m_materialComponent ? m_materialComponent->m_material : nullptr; }
+
+
+	// --------------------------------------------------------
+	// Sets material's vertex and shader buffer data based on this entity and the camera.
+	// Call this before drawing an entity
+	// @param DirectX::XMFLOAT4X4 view View matrix to send to the vertex shader
+	// @param DirectX::XMFLOAT4X4 projection Projection matrix to send to the vertex shader
+	// @param DirectX::XMFLOAT3 cameraPos position of the camera in world space
+	// --------------------------------------------------------
+	void PrepareMaterial(DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 projection, DirectX::XMFLOAT3 cameraPos);
+
 
 	virtual ~Entity();
 

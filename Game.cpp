@@ -3,6 +3,7 @@
 #include <WICTextureLoader.h>
 #include <time.h>
 #include "Transform.h"
+#include "MaterialComponent.h"
 
 // For the DirectX Math library
 using namespace DirectX;
@@ -137,11 +138,12 @@ void Game::LoadShaders()
 
 void Game::CreateEntities()
 {
-	entities.push_back(new Entity("cube1"));
-	entities.back()->GetTransform()->SetPosition(XMFLOAT3(0, 0, 0));
-	entities.back()->GetTransform()->m_material = metalMat;
-	MeshComponent* meshComponent = entities.back()->AddComponent<MeshComponent>();
-	meshComponent->m_mesh = cube;
+	Entity* cube1 = new Entity("cube1");
+	cube1->GetTransform()->SetPosition(XMFLOAT3(0, 0, 0));
+	cube1->AddComponent<MeshComponent>()->m_mesh = cube;
+	cube1->AddComponent<MaterialComponent>()->m_material = metalMat;
+	entities.push_back(cube1);
+
 
 	for (Entity* entity : entities) {
 		for (Component* component : entity->GetAllComponents()) {
@@ -208,7 +210,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	// Draw each entity
 	for (Entity* entity : entities) {
 		entity->GetTransform()->RecalculateWorldMatrix();
-		entity->GetTransform()->PrepareMaterial(camera->GetViewMatrix(), camera->GetProjectionMatrix(), camera->GetPosition());
+		entity->PrepareMaterial(camera->GetViewMatrix(), camera->GetProjectionMatrix(), camera->GetPosition());
 
 		ID3D11Buffer* entityVB = entity->GetMesh()->GetVertexBuffer();
 		context->IASetVertexBuffers(0, 1, &entityVB, &stride, &offset);

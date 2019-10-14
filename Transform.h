@@ -15,8 +15,6 @@ private:
 
 	bool m_worldDirty = true;
 public:
-	Material* m_material;
-
 	Transform(Entity* entity);
 
 	// Getters
@@ -62,16 +60,6 @@ public:
 	// @returns void
 	// --------------------------------------------------------
 	void RecalculateWorldMatrix(bool force = false);
-
-	// --------------------------------------------------------
-	// Sets material's vertex and shader buffer data based on this entity and the camera.
-	// Call this before drawing an entity
-	// @param DirectX::XMFLOAT4X4 view View matrix to send to the vertex shader
-	// @param DirectX::XMFLOAT4X4 projection Projection matrix to send to the vertex shader
-	// @param DirectX::XMFLOAT3 cameraPos position of the camera in world space
-	// --------------------------------------------------------
-	void PrepareMaterial(DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 projection, DirectX::XMFLOAT3 cameraPos);
-
 
 	virtual void Start() override;
 

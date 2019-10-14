@@ -81,26 +81,6 @@ void Transform::RecalculateWorldMatrix(bool force)
 	}
 }
 
-void Transform::PrepareMaterial(XMFLOAT4X4 view, XMFLOAT4X4 projection, DirectX::XMFLOAT3 cameraPos)
-{
-	SimpleVertexShader* vs = m_material->GetVertexShader();
-	SimplePixelShader* ps = m_material->GetPixelShader();
-
-	vs->SetMatrix4x4("world", GetWorldMatrix());
-	vs->SetMatrix4x4("view", view);
-	vs->SetMatrix4x4("projection", projection);
-	vs->SetShader();
-	vs->CopyAllBufferData();
-
-	ps->SetFloat3("cameraPos", cameraPos);
-	ps->SetSamplerState("samplerState", m_material->GetSamplerState());
-	ps->SetShaderResourceView("diffuseTexture", m_material->GetShaderResourceView());
-	ps->SetShader();
-	ps->CopyAllBufferData();
-}
-
-
-
 void Transform::Tick(float deltaTime)
 {
 }
