@@ -1,5 +1,5 @@
 #pragma once
-#include "Entity.h"
+class Entity;
 
 
 // --------------------------------------------------------
@@ -8,18 +8,18 @@
 // --------------------------------------------------------
 class Component
 {
-protected:
-	Entity* m_owner;
+private:
+	Entity* m_owner = nullptr;
 public:
 	// --------------------------------------------------------
-	// Component Constructor. Typically this will not need 
-	// to be overridden. Instead, see the Start method.
+	// Component Constructor. Do not change the parameters that 
+	// this constructor accepts in subclasses!
 	// @param Entity * owner Entity who owns this component
 	// --------------------------------------------------------
 	Component(Entity* owner);
 
 	// --------------------------------------------------------
-	// Called at startup after all entities have been created.
+	// Called at startup **after** all entities have been created.
 	// --------------------------------------------------------
 	virtual void Start() = 0;
 
@@ -28,6 +28,12 @@ public:
 	// @param float deltaTime time since last update
 	// --------------------------------------------------------
 	virtual void Tick(float deltaTime) = 0;
+
+	// --------------------------------------------------------
+	// Returns the owner of this Component
+	// @returns Entity*
+	// --------------------------------------------------------
+	Entity* GetOwner() { return m_owner; }
 
 	virtual ~Component();
 };
