@@ -15,7 +15,6 @@ private:
 
 	bool m_worldDirty = true;
 public:
-	Mesh* m_mesh;
 	Material* m_material;
 
 	Transform(Entity* entity);
@@ -25,7 +24,6 @@ public:
 	DirectX::XMFLOAT3 GetScale() { return m_scale; }
 	DirectX::XMFLOAT4 GetRotation() { return m_rotation; }
 	DirectX::XMFLOAT4X4 GetWorldMatrix() { return m_world; }
-	Mesh* GetMesh() { return m_mesh; }
 
 	// --------------------------------------------------------
 	// Returns the forward vector of this entity

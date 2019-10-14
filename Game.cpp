@@ -55,11 +55,7 @@ Game::~Game()
 	}
 
 	// Delete the mesh objects
-	delete triangle;
-	delete hexagon;
 	delete cube;
-	delete cone;
-	delete cylinder;
 
 	// Delete the camera
 	delete camera;
@@ -87,7 +83,10 @@ void Game::Init()
 	// geometry to draw and some simple camera matrices.
 	//  - You'll be expanding and/or replacing these later
 	LoadShaders();
-	CreateBasicGeometry();
+
+	cube = new Mesh("Assets/Models/cube.obj", device);
+
+
 	CreateEntities();
 	camera = new Camera();
 	camera->UpdateProjectionMatrix((float)width / height);
@@ -95,7 +94,6 @@ void Game::Init()
 
 	directionalLights[0] = { XMFLOAT4(0.1f,0.1f,0.1f,0.1f), XMFLOAT4(1,1,1,1), XMFLOAT3(1,-1,0) };
 	
-
 
 	// Tell the input assembler stage of the pipeline what kind of
 	// geometric primitives (points, lines or triangles) we want to draw.  
@@ -137,72 +135,13 @@ void Game::LoadShaders()
 }
 
 
-// --------------------------------------------------------
-// Creates the geometry we're going to draw - a single triangle for now
-// --------------------------------------------------------
-void Game::CreateBasicGeometry()
-{
-
-	XMFLOAT3 toCamera(0, 0, -1);
-	XMFLOAT2 zeroUV(0, 0);
-
-	// Set up the vertices of the triangle we would like to draw
-	// - We're going to copy this array, exactly as it exists in memory
-	//    over to a DirectX-controlled data structure (the vertex buffer)
-	Vertex triVertices[] =
-	{
-		{ XMFLOAT3(+0.0f, +1.0f, +0.0f), toCamera, zeroUV },
-		{ XMFLOAT3(+1.5f, -1.0f, +0.0f), toCamera, zeroUV  },
-		{ XMFLOAT3(-1.5f, -1.0f, +0.0f), toCamera, zeroUV  },
-	};
-
-	// Set up the indices, which tell us which vertices to use and in which order
-	// - This is somewhat redundant for just 3 vertices (it's a simple example)
-	// - Indices are technically not required if the vertices are in the buffer 
-	//    in the correct order and each one will be used exactly once
-	// - But just to see how it's done...
-	unsigned int triIndices[] = { 0, 1, 2 };
-
-	triangle = new Mesh(triVertices, sizeof(triVertices) / sizeof(Vertex), triIndices, sizeof(triIndices) / sizeof(unsigned int), device);
-
-	float radius = 1;
-	float height = radius * sqrt(3.0f) * 0.5f;
-	float halfR = radius / 2.0f;
-
-	XMFLOAT3 offset(0, 0, 0);
-
-	Vertex hexVertices[] =
-	{
-		{ XMFLOAT3(-halfR + offset.x, height + offset.y, 0), toCamera, zeroUV },
-		{ XMFLOAT3(halfR + offset.x, height + offset.y, 0), toCamera, zeroUV },
-		{ XMFLOAT3(radius + offset.x, offset.y, 0), toCamera, zeroUV },
-		{ XMFLOAT3(halfR + offset.x, -height + offset.y, 0), toCamera, zeroUV },
-		{ XMFLOAT3(-halfR + offset.x, -height + offset.y, 0), toCamera, zeroUV },
-		{ XMFLOAT3(-radius + offset.x, offset.y, 0), toCamera, zeroUV }
-	};
-
-	unsigned int hexIndices[] =
-	{
-		0, 1, 2,
-		0, 2, 3,
-		0, 3, 4,
-		0, 4, 5
-	};
-
-	hexagon = new Mesh(hexVertices, sizeof(hexVertices) / sizeof(Vertex), hexIndices, sizeof(hexIndices) / sizeof(unsigned int), device);
-
-	cone = new Mesh("Assets/Models/cone.obj", device);
-	cube = new Mesh("Assets/Models/cube.obj", device);
-	cylinder = new Mesh("Assets/Models/cylinder.obj", device);
-}
-
-
 void Game::CreateEntities()
 {
 	entities.push_back(new Entity("cube1"));
-	entities.back()->m_transform->SetPosition(XMFLOAT3(0, 0, 0));
-	entities.back()->m_transform->m_material = metalMat;
-	entities.back()->m_transform->m_mesh = cube;
+	entities.back()->GetTransform()->SetPosition(XMFLOAT3(0, 0, 0));
+	entities.back()->GetTransform()->m_material = metalMat;
+	MeshComponent* meshComponent = entities.back()->AddComponent<MeshComponent>();
+	meshComponent->m_mesh = cube;
 
 	for (Entity* entity : entities) {
 		for (Component* component : entity->GetAllComponents()) {
@@ -268,13 +207,13 @@ void Game::Draw(float deltaTime, float totalTime)
 
 	// Draw each entity
 	for (Entity* entity : entities) {
-		entity->m_transform->RecalculateWorldMatrix();
-		entity->m_transform->PrepareMaterial(camera->GetViewMatrix(), camera->GetProjectionMatrix(), camera->GetPosition());
+		entity->GetTransform()->RecalculateWorldMatrix();
+		entity->GetTransform()->PrepareMaterial(camera->GetViewMatrix(), camera->GetProjectionMatrix(), camera->GetPosition());
 
-		ID3D11Buffer* entityVB = entity->m_transform->GetMesh()->GetVertexBuffer();
+		ID3D11Buffer* entityVB = entity->GetMesh()->GetVertexBuffer();
 		context->IASetVertexBuffers(0, 1, &entityVB, &stride, &offset);
-		context->IASetIndexBuffer(entity->m_transform->GetMesh()->GetIndexBuffer(), DXGI_FORMAT_R32_UINT, 0);
-		context->DrawIndexed(entity->m_transform->GetMesh()->GetIndexCount(), 0, 0);
+		context->IASetIndexBuffer(entity->GetMesh()->GetIndexBuffer(), DXGI_FORMAT_R32_UINT, 0);
+		context->DrawIndexed(entity->GetMesh()->GetIndexCount(), 0, 0);
 	}
 
 	// Present the back buffer to the user

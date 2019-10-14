@@ -34,16 +34,11 @@ private:
 
 	// Initialization helper methods - feel free to customize, combine, etc.
 	void LoadShaders(); 
-	void CreateBasicGeometry();
 	void CreateEntities();
 
 
 	// Mesh pointers
-	Mesh* triangle = nullptr;
-	Mesh* hexagon = nullptr;
-	Mesh* cone = nullptr;
 	Mesh* cube = nullptr;
-	Mesh* cylinder = nullptr;
 
 	// Entities
 	std::vector<Entity*> entities;

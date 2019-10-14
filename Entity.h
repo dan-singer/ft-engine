@@ -1,6 +1,7 @@
 #pragma once
 #include "Component.h"
 #include "Transform.h"
+#include "MeshComponent.h"
 #include <DirectXMath.h>
 #include <vector>
 #include <string>
@@ -18,8 +19,12 @@ protected:
 	std::vector<Component*> m_components;
 	std::string m_name;
 	std::unordered_set<std::string> m_tags;
-public:
+
+	// Shortcut references to common components 
 	Transform* m_transform = nullptr;
+	MeshComponent* m_meshComponent = nullptr;
+public:
+
 
 	Entity(const std::string& name);
 
@@ -32,6 +37,10 @@ public:
 	{
 		T* newComponent = new T(this);
 		m_components.push_back(newComponent);
+		MeshComponent* castedMesh = dynamic_cast<MeshComponent*>(newComponent);
+		if (castedMesh) {
+			m_meshComponent = castedMesh;
+		}
 		return newComponent;
 	}
 
@@ -76,6 +85,15 @@ public:
 	void RemoveTag(const std::string& tag) { m_tags.erase(tag); }
 
 	std::vector<Component*>& GetAllComponents() { return m_components; }
+
+	Transform* GetTransform() { return m_transform; }
+
+	
+	// --------------------------------------------------------
+	// Returns the mesh component attached to this Entity.
+	// Note that this CAN be nullptr if a mesh hasn't been attached.
+	// --------------------------------------------------------
+	Mesh* GetMesh() { return m_meshComponent ? m_meshComponent->m_mesh : nullptr; }
 
 	virtual ~Entity();
 
