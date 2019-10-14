@@ -1,5 +1,6 @@
 #pragma once
 class Entity;
+#include <Windows.h>
 
 
 // --------------------------------------------------------
@@ -29,6 +30,15 @@ public:
 	// --------------------------------------------------------
 	virtual void Tick(float deltaTime) = 0;
 
+
+	// Lifecycle Methods ///////////////////////////////////////////
+	virtual void OnResize() { }
+	virtual void OnMouseDown(WPARAM buttonState, int x, int y) { }
+	virtual void OnMouseUp(WPARAM buttonState, int x, int y) { }
+	virtual void OnMouseMove(WPARAM buttonState, int x, int y) { }
+	virtual void OnMouseWheel(float wheelDelta, int x, int y) { }
+	///////////////////////////////////////////////////////////////
+	
 	// --------------------------------------------------------
 	// Returns the owner of this Component
 	// @returns Entity*

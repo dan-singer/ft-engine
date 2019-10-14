@@ -5,7 +5,7 @@
 #include <DirectXMath.h>
 #include "Mesh.h"
 #include "Entity.h"
-#include "Camera.h"
+#include "CameraComponent.h"
 #include "Lights.h"
 
 #define NUM_DIRECTIONAL_LIGHTS 1
@@ -44,7 +44,7 @@ private:
 	std::vector<Entity*> entities;
 
 	// Camera
-	Camera* camera = nullptr;
+	Entity* camera = nullptr;
 
 	// Materials
 	Material* leatherMat = nullptr;

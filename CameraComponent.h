@@ -1,37 +1,23 @@
 #pragma once
 #include <DirectXMath.h>
+#include "Component.h"
 
 // --------------------------------------------------------
 // Camera class which maintains its own view and projection
 // matrices.
 // --------------------------------------------------------
-class Camera
+class CameraComponent : public Component
 {
 private:
 	DirectX::XMFLOAT4X4 m_view;
 	DirectX::XMFLOAT4X4 m_projection;
-	DirectX::XMFLOAT3 m_position;
-	DirectX::XMFLOAT3 m_direction;
-	float m_pitch = 0.0f;
-	float m_yaw = 0.0f;
 public:
-	Camera();
+	CameraComponent(Entity* entity);
 
 	// Getters
 	DirectX::XMFLOAT4X4 GetViewMatrix() { return m_view; }
 	DirectX::XMFLOAT4X4 GetProjectionMatrix() { return m_projection; }
-	DirectX::XMFLOAT3 GetPosition() { return m_position; }
-	DirectX::XMFLOAT3 GetDirection() { return m_direction; }
 
-	// Setters
-	void SetPosition(DirectX::XMFLOAT3 position) { m_position = position; }
-	void SetDirection(DirectX::XMFLOAT3 direction) { m_direction = direction; }
-
-
-	// --------------------------------------------------------
-	// Rotate the camera by provided pitch and yaw in radians
-	// --------------------------------------------------------
-	void Rotate(float pitch, float yaw);
 
 	// --------------------------------------------------------
 	// Updates the camera's view matrix and handles input.
@@ -40,7 +26,7 @@ public:
 	// is only updated if it is dirty
 	// @param float deltaTime Time between frames
 	// --------------------------------------------------------
-	void Update(float deltaTime);
+	virtual void Tick(float deltaTime) override;
 
 	// --------------------------------------------------------
 	// Updates the projection matrix. Call this at the start 
@@ -48,5 +34,8 @@ public:
 	// @param float aspect width/height of screen
 	// --------------------------------------------------------
 	void UpdateProjectionMatrix(float aspect);
+
+	virtual void Start() override;
+
 };
 
