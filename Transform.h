@@ -29,6 +29,12 @@ public:
 	// --------------------------------------------------------
 	DirectX::XMFLOAT3 GetForward();
 
+	// --------------------------------------------------------
+	// Returns the right vector of this entity
+	// @returns DirectX::XMFLOAT3
+	// --------------------------------------------------------
+	DirectX::XMFLOAT3 GetRight();
+
 	// Setters
 	void SetPosition(DirectX::XMFLOAT3 position);
 	void SetScale(DirectX::XMFLOAT3 scale);

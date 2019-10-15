@@ -18,8 +18,10 @@ void DebugMovement::Tick(float deltaTime)
 	XMFLOAT3 fwdData = transform->GetForward();
 	XMVECTOR globalForward = XMLoadFloat3(&fwdData);
 
+	XMFLOAT3 rightData = transform->GetRight();
+	XMVECTOR globalRight = XMLoadFloat3(&rightData);
+
 	XMVECTOR localUp = XMVectorSet(0, 1, 0, 0);
-	XMVECTOR globalRight = XMVector3Cross(globalForward, localUp);
 
 	XMVECTOR translation = XMVectorSet(0, 0, 0, 0);
 	if (GetAsyncKeyState('W') & 0x8000) {

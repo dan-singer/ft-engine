@@ -24,6 +24,14 @@ DirectX::XMFLOAT3 Transform::GetForward()
 	return forward;
 }
 
+DirectX::XMFLOAT3 Transform::GetRight()
+{
+	XMVECTOR rightVec = XMVector3Rotate(XMVectorSet(-1, 0, 0, 0), XMLoadFloat4(&m_rotation));
+	XMFLOAT3 right;
+	XMStoreFloat3(&right, rightVec);
+	return right;
+}
+
 void Transform::SetPosition(DirectX::XMFLOAT3 position)
 {
 	m_position = position;
