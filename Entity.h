@@ -16,6 +16,7 @@
 // --------------------------------------------------------
 class Entity
 {
+	friend class World;
 protected:
 	std::vector<Component*> m_components;
 	std::string m_name;
@@ -25,10 +26,12 @@ protected:
 	Transform* m_transform = nullptr;
 	MeshComponent* m_meshComponent = nullptr;
 	MaterialComponent* m_materialComponent = nullptr;
+
+	// Use the World to instantiate an Entity
+	Entity(const std::string& name);
 public:
 
 
-	Entity(const std::string& name);
 
 	// --------------------------------------------------------
 	// Add a component to this Entity. T must extend from Component!

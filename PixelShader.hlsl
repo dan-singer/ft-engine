@@ -1,4 +1,4 @@
-static const int lightCount = 1;
+#define MAX_LIGHTS 128
 // Struct representing the data we expect to receive from earlier pipeline stages
 // - Should match the output of our corresponding vertex shader
 // - The name of the struct itself is unimportant
@@ -17,18 +17,23 @@ struct VertexToPixel
 	float2 uv			: TEXCOORD;
 };
 
-struct DirectionalLight
-{
-	float4 AmbientColor;
-	float4 DiffuseColor;
-	float3 Direction;
-    float __PADDING;
+struct LightStruct {
+	int type;
+	float3 direction; // 16 Bytes
+	float range;
+	float3 position; // 32 Bytes
+	float intensity;
+	float3 color; // 48 Bytes
+	float spotFalloff;
+	float3 padding; //64 bytes
 };
 
 cbuffer externalData : register(b0)
 {
-    DirectionalLight lights[lightCount];
+    LightStruct lights[MAX_LIGHTS];
     float3 cameraPos;
+
+	int lightCount;
 };
 
 Texture2D diffuseTexture : register(t0);
@@ -54,9 +59,9 @@ float4 main(VertexToPixel input) : SV_TARGET
     for (int i = 0; i < lightCount; ++i)
     {
 		// Diffuse
-        float3 toLight = normalize(-lights[i].Direction);
+        float3 toLight = normalize(-lights[i].direction);
         float NdotL = saturate(dot(toLight, input.normal));
-        float4 diffuse = surfaceColor * lights[i].DiffuseColor * NdotL;
+        float4 diffuse = surfaceColor * float4(lights[i].color, 1) * NdotL;
 
 		// Specular
         float3 h = normalize(toLight + toCamera);
@@ -64,7 +69,7 @@ float4 main(VertexToPixel input) : SV_TARGET
 		// TODO make shiniess based on a cbuffer variable, which should be set from a material
         float specAmt = pow(NdotH, 128.0f);
 		
-        directionalColor += lights[i].AmbientColor + diffuse + specAmt;
+        directionalColor +=  diffuse + specAmt;
     }
 	
     return directionalColor;

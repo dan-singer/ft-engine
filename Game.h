@@ -6,9 +6,7 @@
 #include "Mesh.h"
 #include "Entity.h"
 #include "CameraComponent.h"
-#include "Lights.h"
-
-#define NUM_DIRECTIONAL_LIGHTS 1
+#include "LightComponent.h"
 
 class Game 
 	: public DXCore
@@ -40,9 +38,6 @@ private:
 	// Mesh pointers
 	Mesh* cube = nullptr;
 
-	// Entities
-	std::vector<Entity*> entities;
-
 	// Camera
 	Entity* camera = nullptr;
 
@@ -50,9 +45,6 @@ private:
 	Material* leatherMat = nullptr;
 	Material* metalMat = nullptr;
 
-
-	// Lights
-	DirectionalLight directionalLights[NUM_DIRECTIONAL_LIGHTS] = {};
 
 	// Sampler State
 	ID3D11SamplerState* samplerState = nullptr;

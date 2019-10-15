@@ -5,6 +5,7 @@
 #include "Transform.h"
 #include "MaterialComponent.h"
 #include "DebugMovement.h"
+#include "World.h"
 
 // For the DirectX Math library
 using namespace DirectX;
@@ -51,11 +52,6 @@ Game::~Game()
 	delete vertexShader;
 	delete pixelShader;
 
-	// Delete the entities
-	for (Entity* entity : entities) {
-		delete entity;
-	}
-
 	// Delete the mesh objects
 	delete cube;
 
@@ -89,14 +85,14 @@ void Game::Init()
 	
 	CreateEntities();
 
-	camera = new Entity("Cam");
+	camera = World::GetInstance()->Instantiate("Cam");
 	CameraComponent* cc = camera->AddComponent<CameraComponent>();
 	cc->UpdateProjectionMatrix((float)width / height);
 	camera->GetTransform()->SetPosition(XMFLOAT3(0, 0, -5));
 	camera->AddComponent<DebugMovement>();
-	entities.push_back(camera);
+	World::GetInstance()->m_mainCamera = cc;
 
-	directionalLights[0] = { XMFLOAT4(0.1f,0.1f,0.1f,0.1f), XMFLOAT4(1,1,1,1), XMFLOAT3(1,-1,0) };
+	// directionalLights[0] = { XMFLOAT4(0.1f,0.1f,0.1f,0.1f), XMFLOAT4(1,1,1,1), XMFLOAT3(1,-1,0) };
 	
 
 	// Tell the input assembler stage of the pipeline what kind of
@@ -141,18 +137,13 @@ void Game::LoadShaders()
 
 void Game::CreateEntities()
 {
-	Entity* cube1 = new Entity("cube1");
+	Entity* cube1 = World::GetInstance()->Instantiate("cube1");
 	cube1->GetTransform()->SetPosition(XMFLOAT3(0, 0, 0));
 	cube1->AddComponent<MeshComponent>()->m_mesh = cube;
 	cube1->AddComponent<MaterialComponent>()->m_material = metalMat;
-	entities.push_back(cube1);
 
 
-	for (Entity* entity : entities) {
-		for (Component* component : entity->GetAllComponents()) {
-			component->Start();
-		}
-	}
+	World::GetInstance()->Start();
 }
 
 // --------------------------------------------------------
@@ -175,11 +166,7 @@ void Game::Update(float deltaTime, float totalTime)
 	if (GetAsyncKeyState(VK_ESCAPE))
 		Quit();
 
-	for (Entity* entity : entities) {
-		for (Component* component : entity->GetAllComponents()) {
-			component->Tick(deltaTime);
-		}
-	}
+	World::GetInstance()->Tick(deltaTime);
 }
 
 // --------------------------------------------------------
@@ -200,28 +187,10 @@ void Game::Draw(float deltaTime, float totalTime)
 		1.0f,
 		0);
 
-	pixelShader->SetData("lights", directionalLights, sizeof(DirectionalLight) * NUM_DIRECTIONAL_LIGHTS);
-
-	// Set buffers in the input assembler
-	//  - Do this ONCE PER OBJECT you're drawing, since each object might
-	//    have different geometry.
-	UINT stride = sizeof(Vertex);
-	UINT offset = 0;
+	// pixelShader->SetData("lights", directionalLights, sizeof(DirectionalLight) * NUM_DIRECTIONAL_LIGHTS);
 
 	// Draw each entity
-	CameraComponent* cc = camera->GetComponent<CameraComponent>();
-	for (Entity* entity : entities) {
-		entity->GetTransform()->RecalculateWorldMatrix();
-		if (entity->GetMesh() && entity->GetMaterial()) {
-			entity->PrepareMaterial(cc->GetViewMatrix(), cc->GetProjectionMatrix(), camera->GetTransform()->GetPosition());
-			ID3D11Buffer* entityVB = entity->GetMesh()->GetVertexBuffer();
-			context->IASetVertexBuffers(0, 1, &entityVB, &stride, &offset);
-			context->IASetIndexBuffer(entity->GetMesh()->GetIndexBuffer(), DXGI_FORMAT_R32_UINT, 0);
-			context->DrawIndexed(entity->GetMesh()->GetIndexCount(), 0, 0);
-		}
-
-
-	}
+	World::GetInstance()->DrawEntities(context);
 
 	// Present the back buffer to the user
 	//  - Puts the final frame we're drawing into the window so the user can see it
@@ -244,16 +213,12 @@ void Game::Draw(float deltaTime, float totalTime)
 void Game::OnMouseDown(WPARAM buttonState, int x, int y)
 {
 	// Add any custom code here...
-	for (Entity* entity : entities) {
-		for (Component* component : entity->GetAllComponents()) {
-			component->OnMouseDown(buttonState, x, y);
-		}
-	}
+	World::GetInstance()->OnMouseDown(buttonState, x, y);
 	// Save the previous mouse position, so we have it for the future
 	prevMousePos.x = x;
 	prevMousePos.y = y;
 
-	// Caputure the mouse so we keep getting mouse move
+	// Capture the mouse so we keep getting mouse move
 	// events even if the mouse leaves the window.  we'll be
 	// releasing the capture once a mouse button is released
 	SetCapture(hWnd);
@@ -265,12 +230,7 @@ void Game::OnMouseDown(WPARAM buttonState, int x, int y)
 void Game::OnMouseUp(WPARAM buttonState, int x, int y)
 {
 	// Add any custom code here...
-		// Add any custom code here...
-	for (Entity* entity : entities) {
-		for (Component* component : entity->GetAllComponents()) {
-			component->OnMouseUp(buttonState, x, y);
-		}
-	}
+	World::GetInstance()->OnMouseUp(buttonState, x, y);
 	// We don't care about the tracking the cursor outside
 	// the window anymore (we're not dragging if the mouse is up)
 	ReleaseCapture();
@@ -283,12 +243,7 @@ void Game::OnMouseUp(WPARAM buttonState, int x, int y)
 // --------------------------------------------------------
 void Game::OnMouseMove(WPARAM buttonState, int x, int y)
 {
-	// Add any custom code here...
-	for (Entity* entity : entities) {
-		for (Component* component : entity->GetAllComponents()) {
-			component->OnMouseMove(buttonState, x, y);
-		}
-	}
+	World::GetInstance()->OnMouseMove(buttonState, x, y);
 	// Save the previous mouse position, so we have it for the future
 	prevMousePos.x = x;
 	prevMousePos.y = y;
@@ -302,10 +257,6 @@ void Game::OnMouseMove(WPARAM buttonState, int x, int y)
 void Game::OnMouseWheel(float wheelDelta, int x, int y)
 {
 	// Add any custom code here...
-	for (Entity* entity : entities) {
-		for (Component* component : entity->GetAllComponents()) {
-			component->OnMouseWheel(wheelDelta, x, y);
-		}
-	}
+	World::GetInstance()->OnMouseWheel(wheelDelta, x, y);
 }
 #pragma endregion
