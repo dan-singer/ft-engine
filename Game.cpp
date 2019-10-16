@@ -139,7 +139,7 @@ void Game::CreateEntities()
 	rot->eulerDelta.x = 1.0f;
 	rot->eulerDelta.y = 1.0f;
 
-	camera = World::GetInstance()->Instantiate("Cam");
+	Entity* camera = World::GetInstance()->Instantiate("Cam");
 	CameraComponent* cc = camera->AddComponent<CameraComponent>();
 	cc->UpdateProjectionMatrix((float)width / height);
 	camera->GetTransform()->SetPosition(XMFLOAT3(0, 0, -5));
@@ -182,7 +182,7 @@ void Game::OnResize()
 {
 	// Handle base-level DX resize stuff
 	DXCore::OnResize();
-	camera->GetComponent<CameraComponent>()->UpdateProjectionMatrix((float)width / height);
+	World::GetInstance()->m_mainCamera->UpdateProjectionMatrix((float)width / height);
 }
 
 // --------------------------------------------------------
