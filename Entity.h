@@ -8,6 +8,8 @@
 #include <unordered_set>
 #include <algorithm>
 #include "MaterialComponent.h"
+#include "LightComponent.h"
+#include "World.h"
 
 
 // --------------------------------------------------------
@@ -120,7 +122,7 @@ public:
 	// @param DirectX::XMFLOAT4X4 projection Projection matrix to send to the vertex shader
 	// @param DirectX::XMFLOAT3 cameraPos position of the camera in world space
 	// --------------------------------------------------------
-	void PrepareMaterial(DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 projection, DirectX::XMFLOAT3 cameraPos);
+	void PrepareMaterial(DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 projection, DirectX::XMFLOAT3 cameraPos, LightComponent::Light lights[], int numLights);
 
 
 	virtual ~Entity();

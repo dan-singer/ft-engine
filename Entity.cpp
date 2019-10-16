@@ -5,7 +5,7 @@ Entity::Entity(const std::string& name) : m_name(name)
 	m_transform = AddComponent<Transform>();
 }
 
-void Entity::PrepareMaterial(DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 projection, DirectX::XMFLOAT3 cameraPos)
+void Entity::PrepareMaterial(DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 projection, DirectX::XMFLOAT3 cameraPos, LightComponent::Light lights[], int numLights)
 {
 	Material* material = GetMaterial();
 	SimpleVertexShader* vs = material->GetVertexShader();
@@ -20,6 +20,8 @@ void Entity::PrepareMaterial(DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 proje
 	ps->SetFloat3("cameraPos", cameraPos);
 	ps->SetSamplerState("samplerState", material->GetSamplerState());
 	ps->SetShaderResourceView("diffuseTexture", material->GetShaderResourceView());
+	ps->SetData("lights", lights, sizeof(LightComponent::Light) * MAX_LIGHTS);
+	ps->SetInt("lightCount", numLights);
 	ps->SetShader();
 	ps->CopyAllBufferData();
 }

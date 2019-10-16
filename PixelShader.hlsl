@@ -51,28 +51,63 @@ SamplerState samplerState : register(s0);
 float4 main(VertexToPixel input) : SV_TARGET
 {
 	input.normal = normalize(input.normal);
-    float4 directionalColor = float4(0,0,0,1);
+    float4 finalColor = float4(0,0,0,1);
     float3 toCamera = normalize(cameraPos - input.worldPos);
 
 	float4 surfaceColor = diffuseTexture.Sample(samplerState, input.uv);
-	
+
     for (int i = 0; i < lightCount; ++i)
     {
-		// Diffuse
-        float3 toLight = normalize(-lights[i].direction);
-        float NdotL = saturate(dot(toLight, input.normal));
-        float4 diffuse = surfaceColor * float4(lights[i].color, 1) * NdotL;
+		// DIRECTIONAL 
+		if (lights[i].type == 0) {
+			// Diffuse
+			float3 toLight = normalize(-lights[i].direction);
+			float NdotL = saturate(dot(toLight, input.normal)) * lights[i].intensity;
+			float4 diffuse = surfaceColor * float4(lights[i].color, 1) * NdotL;
 
-		// Specular
-        float3 h = normalize(toLight + toCamera);
-        float NdotH = saturate(dot(input.normal, h));
-		// TODO make shiniess based on a cbuffer variable, which should be set from a material
-        float specAmt = pow(NdotH, 128.0f);
-		
-        directionalColor +=  diffuse + specAmt;
+			// Specular
+			float3 h = normalize(toLight + toCamera);
+			float NdotH = saturate(dot(input.normal, h));
+			// TODO make shiniess based on a cbuffer variable, which should be set from a material
+			float specAmt = pow(NdotH, 128.0f);
+
+			finalColor += diffuse + specAmt;
+		}
+		// POINT
+		else if (lights[i].type == 1) {
+			float3 lightDir = normalize(input.worldPos - lights[i].position);
+			float NdotL = saturate(dot(input.normal, -lightDir)) * lights[i].intensity;
+			float4 diffuse = surfaceColor * float4(lights[i].color, 1) * NdotL;
+
+			// Specular
+			float3 h = normalize(-lightDir + toCamera);
+			float NdotH = saturate(dot(input.normal, h));
+			// TODO make shiniess based on a cbuffer variable, which should be set from a material
+			float specAmt = pow(NdotH, 128.0f);
+
+			finalColor += diffuse + specAmt;
+		}
+		// SPOT
+		else if (lights[i].type == 2) {
+			float3 lightDir = normalize(input.worldPos - lights[i].position);
+
+			float NdotL = saturate(dot(input.normal, -lightDir)) * lights[i].intensity;
+			float4 diffuse = surfaceColor * float4(lights[i].color, 1) * NdotL;
+
+			float angleFromCenter = max(dot(-lightDir, lights[i].direction), 0.0f);
+			float spotAmount = pow(angleFromCenter, lights[i].spotFalloff) * lights[i].intensity;
+
+			// Specular
+			float3 h = normalize(-lightDir + toCamera);
+			float NdotH = saturate(dot(input.normal, h));
+			// TODO make shiniess based on a cbuffer variable, which should be set from a material
+			float specAmt = pow(NdotH, 128.0f);
+
+			finalColor += spotAmount * (diffuse + specAmt);
+		}
     }
 	
-    return directionalColor;
+	return finalColor;
 
 
 }

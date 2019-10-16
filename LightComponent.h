@@ -18,20 +18,22 @@ public:
 	};
 
 	// --------------------------------------------------------
-	// Light Struct that gets passed to the GPU
+	// Light Structure that gets passed to the GPU
 	// --------------------------------------------------------
-	struct {
+	struct Light {
 		Type type;
 		DirectX::XMFLOAT3 direction; // 16 Bytes
 		float range;
 		DirectX::XMFLOAT3 position; // 32 Bytes
-		float intensity; 
+		float intensity;
 		DirectX::XMFLOAT3 color; // 48 Bytes
 		float spotFalloff;
 		DirectX::XMFLOAT3 padding; //64 bytes
-	} m_data;
+	};
 
+	Light m_data;
 
+	LightComponent(Entity* entity) : Component(entity) { }
 
 	virtual void Start() override;
 

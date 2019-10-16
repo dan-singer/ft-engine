@@ -6,6 +6,7 @@
 #include "MaterialComponent.h"
 #include "DebugMovement.h"
 #include "World.h"
+#include "Rotator.h"
 
 // For the DirectX Math library
 using namespace DirectX;
@@ -85,13 +86,6 @@ void Game::Init()
 	
 	CreateEntities();
 
-	camera = World::GetInstance()->Instantiate("Cam");
-	CameraComponent* cc = camera->AddComponent<CameraComponent>();
-	cc->UpdateProjectionMatrix((float)width / height);
-	camera->GetTransform()->SetPosition(XMFLOAT3(0, 0, -5));
-	camera->AddComponent<DebugMovement>();
-	World::GetInstance()->m_mainCamera = cc;
-
 	// directionalLights[0] = { XMFLOAT4(0.1f,0.1f,0.1f,0.1f), XMFLOAT4(1,1,1,1), XMFLOAT3(1,-1,0) };
 	
 
@@ -141,7 +135,41 @@ void Game::CreateEntities()
 	cube1->GetTransform()->SetPosition(XMFLOAT3(0, 0, 0));
 	cube1->AddComponent<MeshComponent>()->m_mesh = cube;
 	cube1->AddComponent<MaterialComponent>()->m_material = metalMat;
+	Rotator* rot = cube1->AddComponent<Rotator>();
+	rot->eulerDelta.x = 1.0f;
+	rot->eulerDelta.y = 1.0f;
 
+	camera = World::GetInstance()->Instantiate("Cam");
+	CameraComponent* cc = camera->AddComponent<CameraComponent>();
+	cc->UpdateProjectionMatrix((float)width / height);
+	camera->GetTransform()->SetPosition(XMFLOAT3(0, 0, -5));
+	camera->AddComponent<DebugMovement>();
+	World::GetInstance()->m_mainCamera = cc;
+
+	Entity* dirLight = World::GetInstance()->Instantiate("DirLight1");
+	LightComponent* dirLightComp = dirLight->AddComponent<LightComponent>();
+	dirLightComp->m_data.type = LightComponent::Directional;
+	dirLightComp->m_data.color = XMFLOAT3(1.0f, 1.0f, 1.0f);
+	dirLightComp->m_data.intensity = 1.0f;
+	
+	Entity* pointLight = World::GetInstance()->Instantiate("PointLight1");
+	LightComponent* pointLightComp = pointLight->AddComponent<LightComponent>();
+	pointLightComp->m_data.type = LightComponent::Point;
+	pointLightComp->m_data.color = XMFLOAT3(1.0f, 0, 0);
+	pointLightComp->m_data.intensity = 1.0f;
+	pointLight->GetTransform()->SetPosition(XMFLOAT3(-2, 2, 0));
+
+	Entity* spotLight = World::GetInstance()->Instantiate("SpotLight1");
+	LightComponent* spotLightComp = spotLight->AddComponent<LightComponent>();
+	spotLightComp->m_data.type = LightComponent::Spot;
+	spotLightComp->m_data.color = XMFLOAT3(0, 1.0f, 0);
+	spotLightComp->m_data.intensity = 1.0f;
+	spotLightComp->m_data.spotFalloff = 1.0f;
+	spotLight->GetTransform()->SetPosition(XMFLOAT3(2, 2, 0));
+	XMFLOAT4 spotLightRot;
+	XMStoreFloat4(&spotLightRot, XMQuaternionRotationRollPitchYaw(0, 90.0f, 0));
+	spotLight->GetTransform()->SetRotation(spotLightRot);
+	
 
 	World::GetInstance()->Start();
 }
@@ -187,7 +215,6 @@ void Game::Draw(float deltaTime, float totalTime)
 		1.0f,
 		0);
 
-	// pixelShader->SetData("lights", directionalLights, sizeof(DirectionalLight) * NUM_DIRECTIONAL_LIGHTS);
 
 	// Draw each entity
 	World::GetInstance()->DrawEntities(context);

@@ -18,11 +18,42 @@ World* World::GetInstance()
 	return m_instance;
 }
 
+void World::RebuildLights()
+{
+	m_activeLightCount = 0;
+	for (Entity* entity : m_entities) {
+		LightComponent* lightComp = entity->GetComponent<LightComponent>();
+		if (lightComp) {
+			m_lights[m_activeLightCount++] = lightComp->m_data;
+		}
+	}
+}
+
 Entity* World::Instantiate(const std::string& name)
 {
 	Entity* entity = new Entity(name);
 	m_entities.push_back(entity);
 	return entity;
+}
+
+Entity* World::Find(const std::string& name)
+{
+	for (Entity* entity : m_entities) {
+		if (entity->GetName() == name) {
+			return entity;
+		}
+	}
+	return nullptr;
+}
+
+Entity* World::FindWithTag(const std::string& tag)
+{
+	for (Entity* entity : m_entities) {
+		if (entity->HasTag(tag)) {
+			return entity;
+		}
+	}
+	return nullptr;
 }
 
 void World::Destroy(Entity* entity)
@@ -69,6 +100,7 @@ void World::OnMouseWheel(float wheelDelta, int x, int y)
 
 void World::Start()
 {
+	RebuildLights();
 	for (Entity* entity : m_entities) {
 		for (Component* component : entity->GetAllComponents()) {
 			component->Start();
@@ -90,6 +122,9 @@ void World::DrawEntities(ID3D11DeviceContext* context)
 	if (!m_mainCamera) {
 		return;
 	}
+
+	RebuildLights();
+
 	// Set buffers in the input assembler
 	//  - Do this ONCE PER OBJECT you're drawing, since each object might
 	//    have different geometry.
@@ -98,7 +133,10 @@ void World::DrawEntities(ID3D11DeviceContext* context)
 	for (Entity* entity : m_entities) {
 		entity->GetTransform()->RecalculateWorldMatrix();
 		if (entity->GetMesh() && entity->GetMaterial()) {
-			entity->PrepareMaterial(m_mainCamera->GetViewMatrix(), m_mainCamera->GetProjectionMatrix(), m_mainCamera->GetOwner()->GetTransform()->GetPosition());
+			entity->PrepareMaterial(
+				m_mainCamera->GetViewMatrix(), m_mainCamera->GetProjectionMatrix(), 
+				m_mainCamera->GetOwner()->GetTransform()->GetPosition(), 
+				m_lights, m_activeLightCount);
 			ID3D11Buffer* entityVB = entity->GetMesh()->GetVertexBuffer();
 			context->IASetVertexBuffers(0, 1, &entityVB, &stride, &offset);
 			context->IASetIndexBuffer(entity->GetMesh()->GetIndexBuffer(), DXGI_FORMAT_R32_UINT, 0);
