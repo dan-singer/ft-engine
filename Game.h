@@ -34,26 +34,22 @@ private:
 	void LoadShaders(); 
 	void CreateEntities();
 
+	// TODO move Meshes, Materials, Shaders, SamplerStates, Textures over to the World singleton
+
 
 	// Mesh pointers
 	Mesh* cube = nullptr;
-
-	// Camera
-	Entity* camera = nullptr;
 
 	// Materials
 	Material* leatherMat = nullptr;
 	Material* metalMat = nullptr;
 
-
 	// Sampler State
 	ID3D11SamplerState* samplerState = nullptr;
-
 
 	// Textures 
 	ID3D11ShaderResourceView* leatherSRV = nullptr;
 	ID3D11ShaderResourceView* metalSRV = nullptr;
-
 
 	// Wrappers for DirectX shaders to provide simplified functionality
 	SimpleVertexShader* vertexShader;

@@ -3,7 +3,7 @@
 #include "CameraComponent.h"
 #include "Entity.h"
 #include <algorithm>
-World* World::m_instance = nullptr;
+#include <iostream>
 
 World::World()
 {
@@ -12,10 +12,8 @@ World::World()
 
 World* World::GetInstance()
 {
-	if (!m_instance) {
-		m_instance = new World();
-	}
-	return m_instance;
+	static World world;
+	return &world;
 }
 
 void World::RebuildLights()

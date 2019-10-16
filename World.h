@@ -11,7 +11,6 @@ class Entity;
 class World
 {
 private:
-	static World* m_instance;
 	std::vector<Entity*> m_entities;
 	LightComponent::Light m_lights[MAX_LIGHTS];
 	int m_activeLightCount = 0;
