@@ -35,7 +35,7 @@ private:
 	void CreateEntities();
 
 	// TODO move Meshes, Materials, Shaders, SamplerStates, Textures over to the World singleton
-
+	// TODO implement light attenuation
 
 	// Mesh pointers
 	Mesh* cube = nullptr;
