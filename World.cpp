@@ -96,6 +96,15 @@ void World::OnMouseWheel(float wheelDelta, int x, int y)
 	}
 }
 
+void World::OnResize(int width, int height)
+{
+	for (Entity* entity : m_entities) {
+		for (Component* component : entity->GetAllComponents()) {
+			component->OnResize(width, height);
+		}
+	}
+}
+
 void World::Start()
 {
 	RebuildLights();
@@ -150,3 +159,5 @@ World::~World()
 		delete entity;
 	}
 }
+
+

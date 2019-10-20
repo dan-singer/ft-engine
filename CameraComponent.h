@@ -22,8 +22,6 @@ public:
 	// --------------------------------------------------------
 	// Updates the camera's view matrix and handles input.
 	// Call this once per frame.
-	// TODO make this behave like Entity in that the view matrix 
-	// is only updated if it is dirty
 	// @param float deltaTime Time between frames
 	// --------------------------------------------------------
 	virtual void Tick(float deltaTime) override;
@@ -36,6 +34,9 @@ public:
 	void UpdateProjectionMatrix(float aspect);
 
 	virtual void Start() override;
+
+
+	virtual void OnResize(int width, int height) override;
 
 };
 

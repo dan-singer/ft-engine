@@ -54,6 +54,7 @@ public:
 	void OnMouseUp(WPARAM buttonState, int x, int y);
 	void OnMouseMove(WPARAM buttonState, int x, int y);
 	void OnMouseWheel(float wheelDelta, int x, int y);
+	void OnResize(int width, int height);
 
 	void Start();
 	void Tick(float deltaTime);

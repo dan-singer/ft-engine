@@ -182,7 +182,7 @@ void Game::OnResize()
 {
 	// Handle base-level DX resize stuff
 	DXCore::OnResize();
-	World::GetInstance()->m_mainCamera->UpdateProjectionMatrix((float)width / height);
+	World::GetInstance()->OnResize(width, height);
 }
 
 // --------------------------------------------------------

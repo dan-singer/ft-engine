@@ -39,3 +39,8 @@ void CameraComponent::UpdateProjectionMatrix(float aspect)
 void CameraComponent::Start()
 {
 }
+
+void CameraComponent::OnResize(int width, int height)
+{
+	UpdateProjectionMatrix((float)width / height);
+}

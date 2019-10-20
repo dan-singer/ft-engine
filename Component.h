@@ -37,6 +37,7 @@ public:
 	virtual void OnMouseUp(WPARAM buttonState, int x, int y) { }
 	virtual void OnMouseMove(WPARAM buttonState, int x, int y) { }
 	virtual void OnMouseWheel(float wheelDelta, int x, int y) { }
+	virtual void OnResize(int width, int height) { }
 	///////////////////////////////////////////////////////////////
 	
 	// --------------------------------------------------------
