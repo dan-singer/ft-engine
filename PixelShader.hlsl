@@ -32,8 +32,8 @@ cbuffer externalData : register(b0)
 {
     LightStruct lights[MAX_LIGHTS];
     float3 cameraPos;
-
 	int lightCount;
+	float shininess;
 };
 
 Texture2D diffuseTexture : register(t0);
@@ -49,8 +49,7 @@ float4 directionalLight(int index, float4 surfaceColor, float3 normal, float3 to
 	// Specular
 	float3 h = normalize(toLight + toCamera);
 	float NdotH = saturate(dot(normal, h));
-	// TODO make shiniess based on a cbuffer variable, which should be set from a material
-	float specAmt = pow(NdotH, 128.0f);
+	float specAmt = shininess > 0 ? pow(NdotH, shininess) : 0;
 
 	return diffuse + specAmt;
 }
@@ -64,8 +63,7 @@ float4 pointLight(int index, float4 surfaceColor, float3 normal, float3 toCamera
 	// Specular
 	float3 h = normalize(-lightDir + toCamera);
 	float NdotH = saturate(dot(normal, h));
-	// TODO make shiniess based on a cbuffer variable, which should be set from a material
-	float specAmt = pow(NdotH, 128.0f);
+	float specAmt = shininess > 0 ? pow(NdotH, shininess) : 0;
 
 	// Range-based attenuation
 	float dist = distance(worldPos, lights[index].position);
@@ -87,8 +85,7 @@ float4 spotLight(int index, float4 surfaceColor, float3 normal, float3 toCamera,
 	// Specular
 	float3 h = normalize(-lightDir + toCamera);
 	float NdotH = saturate(dot(normal, h));
-	// TODO make shiniess based on a cbuffer variable, which should be set from a material
-	float specAmt = pow(NdotH, 128.0f);
+	float specAmt = shininess > 0 ? pow(NdotH, shininess) : 0;
 
 	// Range-based attenuation
 	float dist = distance(worldPos, lights[index].position);

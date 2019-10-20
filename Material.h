@@ -14,6 +14,7 @@ private:
 	ID3D11ShaderResourceView* m_shaderResourceView;
 	ID3D11SamplerState* m_samplerState;
 public:
+	float m_shiniess = 128.0f;
 
 	// --------------------------------------------------------
 	// Construct a Material from shaders and textures
