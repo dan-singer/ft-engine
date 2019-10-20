@@ -47,10 +47,6 @@ Game::~Game()
 {
 	// Delete the sampler state
 	samplerState->Release();
-
-	// Delete textures
-	leatherSRV->Release();
-	metalSRV->Release();
 	
 }
 
@@ -60,18 +56,10 @@ Game::~Game()
 // --------------------------------------------------------
 void Game::Init()
 {
-	// Helper methods for loading shaders, creating some basic
-	// geometry to draw and some simple camera matrices.
-	//  - You'll be expanding and/or replacing these later
-	LoadShaders();
-
-	World::GetInstance()->CreateMesh("cube", "Assets/Models/cube.obj", device);
+	LoadResources();
 
 	
-	CreateEntities();
-
-	// directionalLights[0] = { XMFLOAT4(0.1f,0.1f,0.1f,0.1f), XMFLOAT4(1,1,1,1), XMFLOAT3(1,-1,0) };
-	
+	CreateEntities();	
 
 	// Tell the input assembler stage of the pipeline what kind of
 	// geometric primitives (points, lines or triangles) we want to draw.  
@@ -85,14 +73,20 @@ void Game::Init()
 // - SimpleShader provides helpful methods for sending
 //   data to individual variables on the GPU
 // --------------------------------------------------------
-void Game::LoadShaders()
+void Game::LoadResources()
 {
+	World* world = World::GetInstance();
+
+	// Meshes
+	world->CreateMesh("cube", "Assets/Models/cube.obj", device);
+
+	// Shaders
 	SimpleVertexShader* vs = World::GetInstance()->CreateVertexShader("vs", device, context, L"VertexShader.cso");
 	SimplePixelShader* ps = World::GetInstance()->CreatePixelShader("ps", device, context, L"PixelShader.cso");
 
-	// Create a texture
-	DirectX::CreateWICTextureFromFile(device, context, L"Assets/Textures/Leather.jpg", 0, &leatherSRV);
-	DirectX::CreateWICTextureFromFile(device, context, L"Assets/Textures/BareMetal.png", 0, &metalSRV);
+	// Textures
+	world->CreateTexture("leather", device, context, L"Assets/Textures/Leather.jpg");
+	world->CreateTexture("metal", device, context, L"Assets/Textures/BareMetal.png");
 
 	// Create the sampler state
 	D3D11_SAMPLER_DESC samplerDesc = {};
@@ -103,8 +97,8 @@ void Game::LoadShaders()
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	device->CreateSamplerState(&samplerDesc, &samplerState);
 
-	World::GetInstance()->CreateMaterial("leather", vs, ps, leatherSRV, samplerState);
-	World::GetInstance()->CreateMaterial("metal", vs, ps, metalSRV, samplerState);
+	world->CreateMaterial("leather", vs, ps, world->GetTexture("leather"), samplerState);
+	world->CreateMaterial("metal", vs, ps, world->GetTexture("metal"), samplerState);
 }
 
 

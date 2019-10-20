@@ -31,18 +31,15 @@ public:
 private:
 
 	// Initialization helper methods - feel free to customize, combine, etc.
-	void LoadShaders(); 
+	void LoadResources(); 
 	void CreateEntities();
 
-	// TODO move Materials, SamplerStates, Textures over to the World singleton
+	// TODO move SamplerStates over to the World singleton
 	// TODO implement light attenuation
 
 	// Sampler State
 	ID3D11SamplerState* samplerState = nullptr;
 
-	// Textures 
-	ID3D11ShaderResourceView* leatherSRV = nullptr;
-	ID3D11ShaderResourceView* metalSRV = nullptr;
 
 	// Keeps track of the old mouse position.  Useful for 
 	// determining how far the mouse moved in a single frame.

@@ -4,6 +4,7 @@
 #include "Entity.h"
 #include <algorithm>
 #include <iostream>
+#include "packages/directxtk_desktop_2015.2019.8.23.1/include/WICTextureLoader.h"
 
 World::World()
 {
@@ -117,6 +118,18 @@ Material* World::GetMaterial(const std::string& name)
 	return m_materials[name];
 }
 
+ID3D11ShaderResourceView* World::CreateTexture(const std::string& name, ID3D11Device* device, ID3D11DeviceContext* context, const wchar_t* fileName)
+{
+	m_SRVs[name] = nullptr;
+	DirectX::CreateWICTextureFromFile(device, context, fileName, 0, &m_SRVs[name]);
+	return m_SRVs[name];
+}
+
+ID3D11ShaderResourceView* World::GetTexture(const std::string& name)
+{
+	return m_SRVs[name];
+}
+
 void World::OnMouseDown(WPARAM buttonState, int x, int y)
 {
 	for (Entity* entity : m_entities) {
@@ -227,6 +240,9 @@ World::~World()
 	}
 	for (const auto& pair : m_materials) {
 		delete pair.second;
+	}
+	for (const auto& pair : m_SRVs) {
+		pair.second->Release();
 	}
 }
 
