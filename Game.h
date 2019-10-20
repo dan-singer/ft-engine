@@ -34,12 +34,6 @@ private:
 	void LoadResources(); 
 	void CreateEntities();
 
-	// TODO move SamplerStates over to the World singleton
-	// TODO implement light attenuation
-
-
-
-
 	// Keeps track of the old mouse position.  Useful for 
 	// determining how far the mouse moved in a single frame.
 	POINT prevMousePos;
