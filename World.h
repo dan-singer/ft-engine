@@ -14,7 +14,9 @@ class Entity;
 
 // --------------------------------------------------------
 // The World class is in charge of managing Entities and resources.
-// Access it with the GetInstance method.
+// Access it with the GetInstance method. 
+// If you create anything with the world, you are not required to delete it.
+// The World will keep track of everything and delete it for you.
 // --------------------------------------------------------
 class World
 {
@@ -99,6 +101,9 @@ public:
 	ID3D11ShaderResourceView* CreateTexture(const std::string& name, ID3D11Device* device, ID3D11DeviceContext* context, const wchar_t* fileName);
 	ID3D11ShaderResourceView* GetTexture(const std::string& name);
 
+	// --------------------------------------------------------
+	// Create a sampler state and store it in the internal map
+	// --------------------------------------------------------
 	ID3D11SamplerState* CreateSamplerState(const std::string& name, D3D11_SAMPLER_DESC* description, ID3D11Device* device);
 	ID3D11SamplerState* GetSamplerState(const std::string& name);
 	// Lifecycle methods for Entities

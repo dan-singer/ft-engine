@@ -72,8 +72,8 @@ void Game::LoadResources()
 	world->CreateMesh("cube", "Assets/Models/cube.obj", device);
 
 	// Shaders
-	SimpleVertexShader* vs = World::GetInstance()->CreateVertexShader("vs", device, context, L"VertexShader.cso");
-	SimplePixelShader* ps = World::GetInstance()->CreatePixelShader("ps", device, context, L"PixelShader.cso");
+	SimpleVertexShader* vs = world->CreateVertexShader("vs", device, context, L"VertexShader.cso");
+	SimplePixelShader* ps  = world->CreatePixelShader("ps", device, context, L"PixelShader.cso");
 
 	// Textures
 	world->CreateTexture("leather", device, context, L"Assets/Textures/Leather.jpg");
