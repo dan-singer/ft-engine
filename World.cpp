@@ -105,6 +105,18 @@ SimplePixelShader* World::GetPixelShader(const std::string& name)
 	return m_pixelShaders[name];
 }
 
+Material* World::CreateMaterial(const std::string& name, SimpleVertexShader* vertexShader, SimplePixelShader* pixelShader, ID3D11ShaderResourceView* shaderResourceView, ID3D11SamplerState* samplerState)
+{
+	Material* material = new Material(vertexShader, pixelShader, shaderResourceView, samplerState);
+	m_materials[name] = material;
+	return material;
+}
+
+Material* World::GetMaterial(const std::string& name)
+{
+	return m_materials[name];
+}
+
 void World::OnMouseDown(WPARAM buttonState, int x, int y)
 {
 	for (Entity* entity : m_entities) {
@@ -211,6 +223,9 @@ World::~World()
 		delete pair.second;
 	}
 	for (const auto& pair : m_pixelShaders) {
+		delete pair.second;
+	}
+	for (const auto& pair : m_materials) {
 		delete pair.second;
 	}
 }

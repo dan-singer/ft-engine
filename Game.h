@@ -34,13 +34,8 @@ private:
 	void LoadShaders(); 
 	void CreateEntities();
 
-	// TODO move Materials, Shaders, SamplerStates, Textures over to the World singleton
+	// TODO move Materials, SamplerStates, Textures over to the World singleton
 	// TODO implement light attenuation
-
-
-	// Materials
-	Material* leatherMat = nullptr;
-	Material* metalMat = nullptr;
 
 	// Sampler State
 	ID3D11SamplerState* samplerState = nullptr;

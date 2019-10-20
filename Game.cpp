@@ -45,11 +45,6 @@ Game::Game(HINSTANCE hInstance)
 // --------------------------------------------------------
 Game::~Game()
 {
-
-	// Delete any materials
-	delete leatherMat;
-	delete metalMat;
-
 	// Delete the sampler state
 	samplerState->Release();
 
@@ -92,8 +87,8 @@ void Game::Init()
 // --------------------------------------------------------
 void Game::LoadShaders()
 {
-	World::GetInstance()->CreateVertexShader("vs", device, context, L"VertexShader.cso");
-	World::GetInstance()->CreatePixelShader("ps", device, context, L"PixelShader.cso");
+	SimpleVertexShader* vs = World::GetInstance()->CreateVertexShader("vs", device, context, L"VertexShader.cso");
+	SimplePixelShader* ps = World::GetInstance()->CreatePixelShader("ps", device, context, L"PixelShader.cso");
 
 	// Create a texture
 	DirectX::CreateWICTextureFromFile(device, context, L"Assets/Textures/Leather.jpg", 0, &leatherSRV);
@@ -108,43 +103,44 @@ void Game::LoadShaders()
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	device->CreateSamplerState(&samplerDesc, &samplerState);
 
-	leatherMat = new Material(World::GetInstance()->GetVertexShader("vs"), World::GetInstance()->GetPixelShader("ps"), leatherSRV, samplerState);
-	metalMat = new Material(World::GetInstance()->GetVertexShader("vs"), World::GetInstance()->GetPixelShader("ps"), metalSRV, samplerState);
-
+	World::GetInstance()->CreateMaterial("leather", vs, ps, leatherSRV, samplerState);
+	World::GetInstance()->CreateMaterial("metal", vs, ps, metalSRV, samplerState);
 }
 
 
 void Game::CreateEntities()
 {
-	Entity* cube1 = World::GetInstance()->Instantiate("cube1");
+	World* world = World::GetInstance();
+
+	Entity* cube1 = world->Instantiate("cube1");
 	cube1->GetTransform()->SetPosition(XMFLOAT3(0, 0, 0));
-	cube1->AddComponent<MeshComponent>()->m_mesh = World::GetInstance()->GetMesh("cube");
-	cube1->AddComponent<MaterialComponent>()->m_material = metalMat;
+	cube1->AddComponent<MeshComponent>()->m_mesh = world->GetMesh("cube");
+	cube1->AddComponent<MaterialComponent>()->m_material = world->GetMaterial("metal");
 	Rotator* rot = cube1->AddComponent<Rotator>();
 	rot->eulerDelta.x = 1.0f;
 	rot->eulerDelta.y = 1.0f;
 
-	Entity* camera = World::GetInstance()->Instantiate("Cam");
+	Entity* camera = world->Instantiate("Cam");
 	CameraComponent* cc = camera->AddComponent<CameraComponent>();
 	cc->UpdateProjectionMatrix((float)width / height);
 	camera->GetTransform()->SetPosition(XMFLOAT3(0, 0, -5));
 	camera->AddComponent<DebugMovement>();
-	World::GetInstance()->m_mainCamera = cc;
+	world->m_mainCamera = cc;
 
-	Entity* dirLight = World::GetInstance()->Instantiate("DirLight1");
+	Entity* dirLight = world->Instantiate("DirLight1");
 	LightComponent* dirLightComp = dirLight->AddComponent<LightComponent>();
 	dirLightComp->m_data.type = LightComponent::Directional;
 	dirLightComp->m_data.color = XMFLOAT3(1.0f, 1.0f, 1.0f);
 	dirLightComp->m_data.intensity = 1.0f;
 	
-	Entity* pointLight = World::GetInstance()->Instantiate("PointLight1");
+	Entity* pointLight = world->Instantiate("PointLight1");
 	LightComponent* pointLightComp = pointLight->AddComponent<LightComponent>();
 	pointLightComp->m_data.type = LightComponent::Point;
 	pointLightComp->m_data.color = XMFLOAT3(1.0f, 0, 0);
 	pointLightComp->m_data.intensity = 1.0f;
 	pointLight->GetTransform()->SetPosition(XMFLOAT3(-2, 2, 0));
 
-	Entity* spotLight = World::GetInstance()->Instantiate("SpotLight1");
+	Entity* spotLight = world->Instantiate("SpotLight1");
 	LightComponent* spotLightComp = spotLight->AddComponent<LightComponent>();
 	spotLightComp->m_data.type = LightComponent::Spot;
 	spotLightComp->m_data.color = XMFLOAT3(0, 1.0f, 0);
@@ -156,7 +152,7 @@ void Game::CreateEntities()
 	spotLight->GetTransform()->SetRotation(spotLightRot);
 	
 
-	World::GetInstance()->Start();
+	world->Start();
 }
 
 // --------------------------------------------------------
