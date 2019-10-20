@@ -1,5 +1,4 @@
 #define MAX_LIGHTS 128
-#define RADIUS 2
 // Struct representing the data we expect to receive from earlier pipeline stages
 // - Should match the output of our corresponding vertex shader
 // - The name of the struct itself is unimportant
@@ -70,7 +69,7 @@ float4 pointLight(int index, float4 surfaceColor, float3 normal, float3 toCamera
 
 	// Range-based attenuation
 	float dist = distance(worldPos, lights[index].position);
-	float att = saturate(1.0 - dist * dist / (RADIUS * RADIUS));
+	float att = saturate(1.0 - dist * dist / (lights[index].range * lights[index].range));
 
 	return att * (diffuse + specAmt);
 }
@@ -93,7 +92,7 @@ float4 spotLight(int index, float4 surfaceColor, float3 normal, float3 toCamera,
 
 	// Range-based attenuation
 	float dist = distance(worldPos, lights[index].position);
-	float att = saturate(1.0 - dist * dist / (RADIUS * RADIUS));
+	float att = saturate(1.0 - dist * dist / (lights[index].range * lights[index].range));
 
 	return att * spotAmount * (diffuse + specAmt);
 }

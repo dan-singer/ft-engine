@@ -22,12 +22,12 @@ public:
 	// --------------------------------------------------------
 	struct Light {
 		Type type;
-		DirectX::XMFLOAT3 direction; // 16 Bytes
-		float range;
-		DirectX::XMFLOAT3 position; // 32 Bytes
-		float intensity;
-		DirectX::XMFLOAT3 color; // 48 Bytes
-		float spotFalloff;
+		DirectX::XMFLOAT3 direction = DirectX::XMFLOAT3(0,0,1); // 16 Bytes
+		float range = 5.0f;
+		DirectX::XMFLOAT3 position = DirectX::XMFLOAT3(0,0,0); // 32 Bytes
+		float intensity = 1.0f;
+		DirectX::XMFLOAT3 color = DirectX::XMFLOAT3(1,1,1); // 48 Bytes
+		float spotFalloff = 1.0f;
 		DirectX::XMFLOAT3 padding; //64 bytes
 	};
 
