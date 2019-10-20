@@ -123,7 +123,7 @@ void Game::CreateEntities()
 	pointLightComp->m_data.type = LightComponent::Point;
 	pointLightComp->m_data.color = XMFLOAT3(1.0f, 0, 0);
 	pointLightComp->m_data.intensity = 1.0f;
-	pointLight->GetTransform()->SetPosition(XMFLOAT3(-2, 2, 0));
+	pointLight->GetTransform()->SetPosition(XMFLOAT3(-1, 1, 0));
 
 	Entity* spotLight = world->Instantiate("SpotLight1");
 	LightComponent* spotLightComp = spotLight->AddComponent<LightComponent>();
@@ -131,7 +131,7 @@ void Game::CreateEntities()
 	spotLightComp->m_data.color = XMFLOAT3(0, 1.0f, 0);
 	spotLightComp->m_data.intensity = 1.0f;
 	spotLightComp->m_data.spotFalloff = 1.0f;
-	spotLight->GetTransform()->SetPosition(XMFLOAT3(2, 2, 0));
+	spotLight->GetTransform()->SetPosition(XMFLOAT3(1, 1, 0));
 	XMFLOAT4 spotLightRot;
 	XMStoreFloat4(&spotLightRot, XMQuaternionRotationRollPitchYaw(0, 90.0f, 0));
 	spotLight->GetTransform()->SetRotation(spotLightRot);

@@ -1,4 +1,5 @@
 #define MAX_LIGHTS 128
+#define RADIUS 2
 // Struct representing the data we expect to receive from earlier pipeline stages
 // - Should match the output of our corresponding vertex shader
 // - The name of the struct itself is unimportant
@@ -39,6 +40,65 @@ cbuffer externalData : register(b0)
 Texture2D diffuseTexture : register(t0);
 SamplerState samplerState : register(s0);
 
+float4 directionalLight(int index, float4 surfaceColor, float3 normal, float3 toCamera) 
+{
+	// Diffuse
+	float3 toLight = normalize(-lights[index].direction);
+	float NdotL = saturate(dot(toLight, normal)) * lights[index].intensity;
+	float4 diffuse = surfaceColor * float4(lights[index].color, 1) * NdotL;
+
+	// Specular
+	float3 h = normalize(toLight + toCamera);
+	float NdotH = saturate(dot(normal, h));
+	// TODO make shiniess based on a cbuffer variable, which should be set from a material
+	float specAmt = pow(NdotH, 128.0f);
+
+	return diffuse + specAmt;
+}
+
+float4 pointLight(int index, float4 surfaceColor, float3 normal, float3 toCamera, float3 worldPos)
+{
+	float3 lightDir = normalize(worldPos - lights[index].position);
+	float NdotL = saturate(dot(normal, -lightDir)) * lights[index].intensity;
+	float4 diffuse = surfaceColor * float4(lights[index].color, 1) * NdotL;
+
+	// Specular
+	float3 h = normalize(-lightDir + toCamera);
+	float NdotH = saturate(dot(normal, h));
+	// TODO make shiniess based on a cbuffer variable, which should be set from a material
+	float specAmt = pow(NdotH, 128.0f);
+
+	// Range-based attenuation
+	float dist = distance(worldPos, lights[index].position);
+	float att = saturate(1.0 - dist * dist / (RADIUS * RADIUS));
+
+	return att * (diffuse + specAmt);
+}
+
+float4 spotLight(int index, float4 surfaceColor, float3 normal, float3 toCamera, float3 worldPos)
+{
+	float3 lightDir = normalize(worldPos - lights[index].position);
+
+	float NdotL = saturate(dot(normal, -lightDir)) * lights[index].intensity;
+	float4 diffuse = surfaceColor * float4(lights[index].color, 1) * NdotL;
+
+	float angleFromCenter = max(dot(-lightDir, lights[index].direction), 0.0f);
+	float spotAmount = pow(angleFromCenter, lights[index].spotFalloff) * lights[index].intensity;
+
+	// Specular
+	float3 h = normalize(-lightDir + toCamera);
+	float NdotH = saturate(dot(normal, h));
+	// TODO make shiniess based on a cbuffer variable, which should be set from a material
+	float specAmt = pow(NdotH, 128.0f);
+
+	// Range-based attenuation
+	float dist = distance(worldPos, lights[index].position);
+	float att = saturate(1.0 - dist * dist / (RADIUS * RADIUS));
+
+	return att * spotAmount * (diffuse + specAmt);
+}
+
+
 // --------------------------------------------------------
 // The entry point (main method) for our pixel shader
 // 
@@ -58,52 +118,14 @@ float4 main(VertexToPixel input) : SV_TARGET
 
     for (int i = 0; i < lightCount; ++i)
     {
-		// DIRECTIONAL 
 		if (lights[i].type == 0) {
-			// Diffuse
-			float3 toLight = normalize(-lights[i].direction);
-			float NdotL = saturate(dot(toLight, input.normal)) * lights[i].intensity;
-			float4 diffuse = surfaceColor * float4(lights[i].color, 1) * NdotL;
-
-			// Specular
-			float3 h = normalize(toLight + toCamera);
-			float NdotH = saturate(dot(input.normal, h));
-			// TODO make shiniess based on a cbuffer variable, which should be set from a material
-			float specAmt = pow(NdotH, 128.0f);
-
-			finalColor += diffuse + specAmt;
+			finalColor += directionalLight(i, surfaceColor, input.normal, toCamera);
 		}
-		// POINT
 		else if (lights[i].type == 1) {
-			float3 lightDir = normalize(input.worldPos - lights[i].position);
-			float NdotL = saturate(dot(input.normal, -lightDir)) * lights[i].intensity;
-			float4 diffuse = surfaceColor * float4(lights[i].color, 1) * NdotL;
-
-			// Specular
-			float3 h = normalize(-lightDir + toCamera);
-			float NdotH = saturate(dot(input.normal, h));
-			// TODO make shiniess based on a cbuffer variable, which should be set from a material
-			float specAmt = pow(NdotH, 128.0f);
-
-			finalColor += diffuse + specAmt;
+			finalColor += pointLight(i, surfaceColor, input.normal, toCamera, input.worldPos);
 		}
-		// SPOT
 		else if (lights[i].type == 2) {
-			float3 lightDir = normalize(input.worldPos - lights[i].position);
-
-			float NdotL = saturate(dot(input.normal, -lightDir)) * lights[i].intensity;
-			float4 diffuse = surfaceColor * float4(lights[i].color, 1) * NdotL;
-
-			float angleFromCenter = max(dot(-lightDir, lights[i].direction), 0.0f);
-			float spotAmount = pow(angleFromCenter, lights[i].spotFalloff) * lights[i].intensity;
-
-			// Specular
-			float3 h = normalize(-lightDir + toCamera);
-			float NdotH = saturate(dot(input.normal, h));
-			// TODO make shiniess based on a cbuffer variable, which should be set from a material
-			float specAmt = pow(NdotH, 128.0f);
-
-			finalColor += spotAmount * (diffuse + specAmt);
+			finalColor += spotLight(i, surfaceColor, input.normal, toCamera, input.worldPos);
 		}
     }
 	
