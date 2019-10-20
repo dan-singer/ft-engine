@@ -60,6 +60,25 @@ void World::Destroy(Entity* entity)
 	m_entities.erase(std::find(m_entities.begin(), m_entities.end(), entity));
 }
 
+Mesh* World::CreateMesh(const std::string& name, Vertex* vertices, int numVertices, unsigned int* indices, int numIndices, ID3D11Device* device)
+{
+	Mesh* mesh = new Mesh(vertices, numVertices, indices, numIndices, device);
+	m_meshes[name] = mesh;
+	return mesh;
+}
+
+Mesh* World::CreateMesh(const std::string& name, const char* file, ID3D11Device* device)
+{
+	Mesh* mesh = new Mesh(file, device);
+	m_meshes[name] = mesh;
+	return mesh;
+}
+
+Mesh* World::GetMesh(const std::string& name)
+{
+	return m_meshes[name];
+}
+
 void World::OnMouseDown(WPARAM buttonState, int x, int y)
 {
 	for (Entity* entity : m_entities) {
@@ -157,6 +176,10 @@ World::~World()
 	// Delete the entities
 	for (Entity* entity : m_entities) {
 		delete entity;
+	}
+	// Delete resources
+	for (const auto& pair : m_meshes) {
+		delete pair.second;
 	}
 }
 

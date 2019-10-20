@@ -53,9 +53,6 @@ Game::~Game()
 	delete vertexShader;
 	delete pixelShader;
 
-	// Delete the mesh objects
-	delete cube;
-
 
 	// Delete any materials
 	delete leatherMat;
@@ -81,7 +78,7 @@ void Game::Init()
 	//  - You'll be expanding and/or replacing these later
 	LoadShaders();
 
-	cube = new Mesh("Assets/Models/cube.obj", device);
+	World::GetInstance()->CreateMesh("cube", "Assets/Models/cube.obj", device);
 
 	
 	CreateEntities();
@@ -133,7 +130,7 @@ void Game::CreateEntities()
 {
 	Entity* cube1 = World::GetInstance()->Instantiate("cube1");
 	cube1->GetTransform()->SetPosition(XMFLOAT3(0, 0, 0));
-	cube1->AddComponent<MeshComponent>()->m_mesh = cube;
+	cube1->AddComponent<MeshComponent>()->m_mesh = World::GetInstance()->GetMesh("cube");
 	cube1->AddComponent<MaterialComponent>()->m_material = metalMat;
 	Rotator* rot = cube1->AddComponent<Rotator>();
 	rot->eulerDelta.x = 1.0f;
