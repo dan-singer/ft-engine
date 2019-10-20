@@ -27,9 +27,6 @@ Game::Game(HINSTANCE hInstance)
 		720,			   // Height of the window's client area
 		true)			   // Show extra stats (fps) in title bar?
 {
-	// Initialize fields
-	vertexShader = 0;
-	pixelShader = 0;
 
 	prevMousePos = { 0,0 };
 
@@ -48,11 +45,6 @@ Game::Game(HINSTANCE hInstance)
 // --------------------------------------------------------
 Game::~Game()
 {
-	// Delete our simple shader objects, which
-	// will clean up their own internal DirectX stuff
-	delete vertexShader;
-	delete pixelShader;
-
 
 	// Delete any materials
 	delete leatherMat;
@@ -100,11 +92,8 @@ void Game::Init()
 // --------------------------------------------------------
 void Game::LoadShaders()
 {
-	vertexShader = new SimpleVertexShader(device, context);
-	vertexShader->LoadShaderFile(L"VertexShader.cso");
-
-	pixelShader = new SimplePixelShader(device, context);
-	pixelShader->LoadShaderFile(L"PixelShader.cso");
+	World::GetInstance()->CreateVertexShader("vs", device, context, L"VertexShader.cso");
+	World::GetInstance()->CreatePixelShader("ps", device, context, L"PixelShader.cso");
 
 	// Create a texture
 	DirectX::CreateWICTextureFromFile(device, context, L"Assets/Textures/Leather.jpg", 0, &leatherSRV);
@@ -119,9 +108,8 @@ void Game::LoadShaders()
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	device->CreateSamplerState(&samplerDesc, &samplerState);
 
-
-	leatherMat = new Material(vertexShader, pixelShader, leatherSRV, samplerState);
-	metalMat = new Material(vertexShader, pixelShader, metalSRV, samplerState);
+	leatherMat = new Material(World::GetInstance()->GetVertexShader("vs"), World::GetInstance()->GetPixelShader("ps"), leatherSRV, samplerState);
+	metalMat = new Material(World::GetInstance()->GetVertexShader("vs"), World::GetInstance()->GetPixelShader("ps"), metalSRV, samplerState);
 
 }
 

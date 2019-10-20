@@ -7,6 +7,7 @@
 #include <map>
 #include "LightComponent.h"
 #include "Mesh.h"
+#include "SimpleShader.h"
 class CameraComponent;
 class Entity;
 
@@ -19,6 +20,8 @@ class World
 private:
 	std::vector<Entity*> m_entities;
 	std::map<std::string, Mesh*> m_meshes;
+	std::map<std::string, SimpleVertexShader*> m_vertexShaders;
+	std::map<std::string, SimplePixelShader*> m_pixelShaders;
 	LightComponent::Light m_lights[MAX_LIGHTS];
 	int m_activeLightCount = 0;
 	World();
@@ -67,7 +70,17 @@ public:
 	Mesh* CreateMesh(const std::string& name, const char* file, ID3D11Device* device);
 	Mesh* GetMesh(const std::string& name);
 
-	
+	// --------------------------------------------------------
+	// Creates a vertex shader and adds it to the internal VS map
+	// --------------------------------------------------------
+	SimpleVertexShader* CreateVertexShader(const std::string& name, ID3D11Device* device, ID3D11DeviceContext* context, LPCWSTR shaderFile);
+	SimpleVertexShader* GetVertexShader(const std::string& name);
+
+	// --------------------------------------------------------
+	// Creates a pixel shader and adds it to the internal VS map
+	// --------------------------------------------------------
+	SimplePixelShader* CreatePixelShader(const std::string& name, ID3D11Device* device, ID3D11DeviceContext* context, LPCWSTR shaderFile);
+	SimplePixelShader* GetPixelShader(const std::string& name);
 
 	// Lifecycle methods for Entities
 	void OnMouseDown(WPARAM buttonState, int x, int y);

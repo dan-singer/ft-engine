@@ -79,6 +79,32 @@ Mesh* World::GetMesh(const std::string& name)
 	return m_meshes[name];
 }
 
+SimpleVertexShader* World::CreateVertexShader(const std::string& name, ID3D11Device* device, ID3D11DeviceContext* context, LPCWSTR shaderFile)
+{
+	SimpleVertexShader* vs = new SimpleVertexShader(device, context);
+	vs->LoadShaderFile(shaderFile);
+	m_vertexShaders[name] = vs;
+	return vs;
+}
+
+SimpleVertexShader* World::GetVertexShader(const std::string& name)
+{
+	return m_vertexShaders[name];
+}
+
+SimplePixelShader* World::CreatePixelShader(const std::string& name, ID3D11Device* device, ID3D11DeviceContext* context, LPCWSTR shaderFile)
+{
+	SimplePixelShader* ps = new SimplePixelShader(device, context);
+	ps->LoadShaderFile(shaderFile);
+	m_pixelShaders[name] = ps;
+	return ps;
+}
+
+SimplePixelShader* World::GetPixelShader(const std::string& name)
+{
+	return m_pixelShaders[name];
+}
+
 void World::OnMouseDown(WPARAM buttonState, int x, int y)
 {
 	for (Entity* entity : m_entities) {
@@ -179,6 +205,12 @@ World::~World()
 	}
 	// Delete resources
 	for (const auto& pair : m_meshes) {
+		delete pair.second;
+	}
+	for (const auto& pair : m_vertexShaders) {
+		delete pair.second;
+	}
+	for (const auto& pair : m_pixelShaders) {
 		delete pair.second;
 	}
 }
