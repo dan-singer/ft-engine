@@ -37,8 +37,7 @@ private:
 	// TODO move SamplerStates over to the World singleton
 	// TODO implement light attenuation
 
-	// Sampler State
-	ID3D11SamplerState* samplerState = nullptr;
+
 
 
 	// Keeps track of the old mouse position.  Useful for 

@@ -25,6 +25,7 @@ private:
 	std::map<std::string, SimplePixelShader*> m_pixelShaders;
 	std::map<std::string, Material*> m_materials;
 	std::map<std::string, ID3D11ShaderResourceView*> m_SRVs;
+	std::map<std::string, ID3D11SamplerState*> m_samplerStates;
 	LightComponent::Light m_lights[MAX_LIGHTS];
 	int m_activeLightCount = 0;
 	World();
@@ -98,6 +99,8 @@ public:
 	ID3D11ShaderResourceView* CreateTexture(const std::string& name, ID3D11Device* device, ID3D11DeviceContext* context, const wchar_t* fileName);
 	ID3D11ShaderResourceView* GetTexture(const std::string& name);
 
+	ID3D11SamplerState* CreateSamplerState(const std::string& name, D3D11_SAMPLER_DESC* description, ID3D11Device* device);
+	ID3D11SamplerState* GetSamplerState(const std::string& name);
 	// Lifecycle methods for Entities
 	void OnMouseDown(WPARAM buttonState, int x, int y);
 	void OnMouseUp(WPARAM buttonState, int x, int y);

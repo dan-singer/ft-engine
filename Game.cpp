@@ -38,16 +38,9 @@ Game::Game(HINSTANCE hInstance)
 	
 }
 
-// --------------------------------------------------------
-// Destructor - Clean up anything our game has created:
-//  - Release all DirectX objects created here
-//  - Delete any objects to prevent memory leaks
-// --------------------------------------------------------
 Game::~Game()
 {
-	// Delete the sampler state
-	samplerState->Release();
-	
+
 }
 
 // --------------------------------------------------------
@@ -57,10 +50,8 @@ Game::~Game()
 void Game::Init()
 {
 	LoadResources();
-
-	
 	CreateEntities();	
-
+	World::GetInstance()->Start();
 	// Tell the input assembler stage of the pipeline what kind of
 	// geometric primitives (points, lines or triangles) we want to draw.  
 	// Essentially: "What kind of shape should the GPU draw with our data?"
@@ -95,10 +86,10 @@ void Game::LoadResources()
 	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
 	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-	device->CreateSamplerState(&samplerDesc, &samplerState);
+	world->CreateSamplerState("main", &samplerDesc, device);
 
-	world->CreateMaterial("leather", vs, ps, world->GetTexture("leather"), samplerState);
-	world->CreateMaterial("metal", vs, ps, world->GetTexture("metal"), samplerState);
+	world->CreateMaterial("leather", vs, ps, world->GetTexture("leather"), world->GetSamplerState("main"));
+	world->CreateMaterial("metal", vs, ps, world->GetTexture("metal"), world->GetSamplerState("main"));
 }
 
 
@@ -144,9 +135,6 @@ void Game::CreateEntities()
 	XMFLOAT4 spotLightRot;
 	XMStoreFloat4(&spotLightRot, XMQuaternionRotationRollPitchYaw(0, 90.0f, 0));
 	spotLight->GetTransform()->SetRotation(spotLightRot);
-	
-
-	world->Start();
 }
 
 // --------------------------------------------------------

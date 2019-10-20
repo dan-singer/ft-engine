@@ -4,7 +4,7 @@
 #include "Entity.h"
 #include <algorithm>
 #include <iostream>
-#include "packages/directxtk_desktop_2015.2019.8.23.1/include/WICTextureLoader.h"
+#include <WICTextureLoader.h>
 
 World::World()
 {
@@ -130,6 +130,18 @@ ID3D11ShaderResourceView* World::GetTexture(const std::string& name)
 	return m_SRVs[name];
 }
 
+ID3D11SamplerState* World::CreateSamplerState(const std::string& name, D3D11_SAMPLER_DESC* description, ID3D11Device* device)
+{
+	m_samplerStates[name] = nullptr;
+	device->CreateSamplerState(description, &m_samplerStates[name]);
+	return m_samplerStates[name];
+}
+
+ID3D11SamplerState* World::GetSamplerState(const std::string& name)
+{
+	return m_samplerStates[name];
+}
+
 void World::OnMouseDown(WPARAM buttonState, int x, int y)
 {
 	for (Entity* entity : m_entities) {
@@ -242,6 +254,9 @@ World::~World()
 		delete pair.second;
 	}
 	for (const auto& pair : m_SRVs) {
+		pair.second->Release();
+	}
+	for (const auto& pair : m_samplerStates) {
 		pair.second->Release();
 	}
 }
