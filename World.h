@@ -55,6 +55,12 @@ public:
 
 
 	// --------------------------------------------------------
+	// Returns a pointer to the Bullet library's world object
+	// --------------------------------------------------------
+	btDiscreteDynamicsWorld* GetPhysicsWorld() { return m_dynamicsWorld; }
+
+
+	// --------------------------------------------------------
 	// Create an Entity in the world.
 	// @param const std::string& name name of the entity
  	// @returns Entity* the created Entity pointer

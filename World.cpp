@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <iostream>
 #include <WICTextureLoader.h>
+#include "RigidBodyComponent.h"
 
 World::World()
 {
@@ -72,6 +73,16 @@ Entity* World::FindWithTag(const std::string& tag)
 
 void World::Destroy(Entity* entity)
 {
+	// Rigidbodies need to be deleted separately
+	RigidBodyComponent* rb = entity->GetComponent<RigidBodyComponent>();
+	if (rb) {
+		btRigidBody* body = rb->GetBody();
+		if (body && body->getMotionState()) {
+			delete body->getMotionState();
+		}
+		m_dynamicsWorld->removeCollisionObject(body);
+		delete body;
+	}
 	delete entity;
 	m_entities.erase(std::find(m_entities.begin(), m_entities.end(), entity));
 }
@@ -214,6 +225,10 @@ void World::Start()
 
 void World::Tick(float deltaTime)
 {
+	// Simulate physics
+	m_dynamicsWorld->stepSimulation(1.0f / 60.0f, 10);
+
+
 	for (Entity* entity : m_entities) {
 		for (Component* component : entity->GetAllComponents()) {
 			component->Tick(deltaTime);
@@ -251,6 +266,23 @@ void World::DrawEntities(ID3D11DeviceContext* context)
 
 World::~World()
 {
+	// Delete Bullet resources
+	for (int i = m_dynamicsWorld->getNumCollisionObjects() - 1; i >= 0; --i) {
+		btCollisionObject* obj = m_dynamicsWorld->getCollisionObjectArray()[i];
+		btRigidBody* body = btRigidBody::upcast(obj);
+		if (body && body->getMotionState()) {
+			delete body->getMotionState();
+		}
+		m_dynamicsWorld->removeCollisionObject(obj);
+		delete obj;
+	}
+	delete m_dynamicsWorld;
+	delete m_solver;
+	delete m_overlappingPairCache;
+	delete m_dispatcher;
+	delete m_collisionConfiguration;
+
+
 	// Delete the entities
 	for (Entity* entity : m_entities) {
 		delete entity;
@@ -275,12 +307,7 @@ World::~World()
 		pair.second->Release();
 	}
 
-	// Delete Bullet resources
-	delete m_dynamicsWorld;
-	delete m_solver;
-	delete m_overlappingPairCache;
-	delete m_dispatcher;
-	delete m_collisionConfiguration;
+
 }
 
 

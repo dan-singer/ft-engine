@@ -7,6 +7,7 @@
 #include "DebugMovement.h"
 #include "World.h"
 #include "Rotator.h"
+#include "RigidBodyComponent.h"
 
 // For the DirectX Math library
 using namespace DirectX;
@@ -104,6 +105,12 @@ void Game::CreateEntities()
 	Rotator* rot = cube1->AddComponent<Rotator>();
 	rot->eulerDelta.x = 1.0f;
 	rot->eulerDelta.y = 1.0f;
+
+	Entity* ground = world->Instantiate("ground");
+	ground->GetTransform()->SetPosition(XMFLOAT3(0, -3, 0));
+	ground->AddComponent<MeshComponent>()->m_mesh = world->GetMesh("cube");
+	ground->AddComponent<MaterialComponent>()->m_material = world->GetMaterial("metal");
+	ground->AddComponent<RigidBodyComponent>()->SetBoxCollider(.5f, .5f, .5f);
 
 	Entity* camera = world->Instantiate("Cam");
 	CameraComponent* cc = camera->AddComponent<CameraComponent>();
