@@ -102,9 +102,9 @@ void Game::CreateEntities()
 	cube1->GetTransform()->SetPosition(XMFLOAT3(0, 0, 0));
 	cube1->AddComponent<MeshComponent>()->m_mesh = world->GetMesh("cube");
 	cube1->AddComponent<MaterialComponent>()->m_material = world->GetMaterial("metal");
-	Rotator* rot = cube1->AddComponent<Rotator>();
-	rot->eulerDelta.x = 1.0f;
-	rot->eulerDelta.y = 1.0f;
+	RigidBodyComponent* rb = cube1->AddComponent<RigidBodyComponent>();
+	rb->SetBoxCollider(.5f, .5f, .5f);
+	rb->m_mass = 1.0f; // This has mass so it will be affected by gravity
 
 	Entity* ground = world->Instantiate("ground");
 	ground->GetTransform()->SetPosition(XMFLOAT3(0, -3, 0));

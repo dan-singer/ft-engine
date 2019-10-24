@@ -24,7 +24,7 @@ World::World()
 
 	m_dynamicsWorld = new btDiscreteDynamicsWorld(m_dispatcher, m_overlappingPairCache, m_solver, m_collisionConfiguration);
 
-	m_dynamicsWorld->setGravity(btVector3(0, -9.81f, 0));
+	m_dynamicsWorld->setGravity(m_gravity);
 }
 
 World* World::GetInstance()
@@ -42,6 +42,12 @@ void World::RebuildLights()
 			m_lights[m_activeLightCount++] = lightComp->m_data;
 		}
 	}
+}
+
+void World::SetGravity(btVector3 gravity)
+{
+	m_gravity = gravity;
+	m_dynamicsWorld->setGravity(gravity);
 }
 
 Entity* World::Instantiate(const std::string& name)
@@ -226,7 +232,7 @@ void World::Start()
 void World::Tick(float deltaTime)
 {
 	// Simulate physics
-	m_dynamicsWorld->stepSimulation(1.0f / 60.0f, 10);
+	m_dynamicsWorld->stepSimulation(deltaTime, 10);
 
 
 	for (Entity* entity : m_entities) {

@@ -38,6 +38,7 @@ private:
 	btBroadphaseInterface* m_overlappingPairCache;
 	btSequentialImpulseConstraintSolver* m_solver;
 	btDiscreteDynamicsWorld* m_dynamicsWorld;
+	btVector3 m_gravity = btVector3(0, -9.81f, 0);
 
 	World();
 	// --------------------------------------------------------
@@ -59,6 +60,7 @@ public:
 	// --------------------------------------------------------
 	btDiscreteDynamicsWorld* GetPhysicsWorld() { return m_dynamicsWorld; }
 
+	void SetGravity(btVector3 gravity);
 
 	// --------------------------------------------------------
 	// Create an Entity in the world.

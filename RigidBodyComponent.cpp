@@ -47,6 +47,16 @@ void RigidBodyComponent::Start()
 
 void RigidBodyComponent::Tick(float deltaTime)
 {
+	// Retrieve the motion state's transform
+	btTransform btTransform;
+	m_motionState->getWorldTransform(btTransform);
+	btVector3 origin = btTransform.getOrigin();
+	btQuaternion rotation = btTransform.getRotation();
+	
+	// Copy over the btTransform to the Transform component
+	Transform* transform = GetOwner()->GetTransform();
+	transform->SetPosition(XMFLOAT3(origin.x(), origin.y(), origin.z()));
+	transform->SetRotation(XMFLOAT4(rotation.x(), rotation.y(), rotation.z(), rotation.w()));
 }
 
 RigidBodyComponent::~RigidBodyComponent()
