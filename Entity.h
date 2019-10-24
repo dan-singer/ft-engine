@@ -10,6 +10,7 @@
 #include "MaterialComponent.h"
 #include "LightComponent.h"
 #include "World.h"
+#include "RigidBodyComponent.h"
 
 
 // --------------------------------------------------------
@@ -28,6 +29,7 @@ protected:
 	Transform* m_transform = nullptr;
 	MeshComponent* m_meshComponent = nullptr;
 	MaterialComponent* m_materialComponent = nullptr;
+	RigidBodyComponent* m_rigidBodyComponent = nullptr;
 
 	// Use the World to instantiate an Entity
 	Entity(const std::string& name);
@@ -54,6 +56,16 @@ public:
 		if (castedMaterial) {
 			m_materialComponent = castedMaterial;
 		}
+		RigidBodyComponent* castedRB = dynamic_cast<RigidBodyComponent*>(newComponent);
+		if (castedRB) {
+			m_rigidBodyComponent = castedRB;
+			// We need this component to be first in line, so that other components can use it at start
+			// if they need access to it. So swap the back and front.
+			Component* temp = m_components[0];
+			m_components[0] = newComponent;
+			m_components[m_components.size() - 1] = temp;
+		}
+
 
 		return newComponent;
 	}
@@ -101,6 +113,8 @@ public:
 	std::vector<Component*>& GetAllComponents() { return m_components; }
 
 	Transform* GetTransform() { return m_transform; }
+
+	RigidBodyComponent* GetRigidBody() { return m_rigidBodyComponent; }
 
 	// --------------------------------------------------------
 	// Returns the mesh component attached to this Entity.

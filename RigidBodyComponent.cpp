@@ -15,6 +15,11 @@ void RigidBodyComponent::SetSphereCollider(float radius)
 	m_shape = new btSphereShape((btScalar)radius);
 }
 
+void RigidBodyComponent::ApplyForce(btVector3 force)
+{
+	m_body->applyCentralForce(force);
+}
+
 void RigidBodyComponent::Start()
 {
 	// Shape should have been set by this point

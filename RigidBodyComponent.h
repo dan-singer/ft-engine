@@ -4,7 +4,7 @@
 
 // --------------------------------------------------------
 // Abstraction of Bullet physics to allow for easy
-// Attaching of physics behaviors with a Component
+// Attaching of physics behaviors with a Component.
 // --------------------------------------------------------
 class RigidBodyComponent : public Component
 {
@@ -34,6 +34,13 @@ public:
 	// @param float radius radius of the sphere shape
 	// --------------------------------------------------------
 	void SetSphereCollider(float radius);
+
+
+	// --------------------------------------------------------
+	// Applies a force to this Entity. 
+	// @param btVector3 force
+	// --------------------------------------------------------
+	void ApplyForce(btVector3 force);
 
 
 	virtual void Start() override;
