@@ -5,6 +5,7 @@
 #include <Windows.h>
 #include <d3d11.h>
 #include <map>
+#include <bullet/btBulletDynamicsCommon.h>
 #include "LightComponent.h"
 #include "Mesh.h"
 #include "SimpleShader.h"
@@ -30,6 +31,14 @@ private:
 	std::map<std::string, ID3D11SamplerState*> m_samplerStates;
 	LightComponent::Light m_lights[MAX_LIGHTS];
 	int m_activeLightCount = 0;
+
+	// Bullet
+	btDefaultCollisionConfiguration* m_collisionConfiguration;
+	btCollisionDispatcher* m_dispatcher;
+	btBroadphaseInterface* m_overlappingPairCache;
+	btSequentialImpulseConstraintSolver* m_solver;
+	btDiscreteDynamicsWorld* m_dynamicsWorld;
+
 	World();
 	// --------------------------------------------------------
 	// Rebuilds the array of light structs that will be sent to the GPU.

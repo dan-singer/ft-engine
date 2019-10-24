@@ -8,7 +8,22 @@
 
 World::World()
 {
+	// Bullet Physics Setup. See https://github.com/bulletphysics/bullet3/blob/master/examples/HelloWorld/HelloWorld.cpp
+	///collision configuration contains default setup for memory, collision setup. Advanced users can create their own configuration.
+	m_collisionConfiguration = new btDefaultCollisionConfiguration();
 
+	///use the default collision dispatcher. For parallel processing you can use a diffent dispatcher (see Extras/BulletMultiThreaded)
+	m_dispatcher = new btCollisionDispatcher(m_collisionConfiguration);
+
+	///btDbvtBroadphase is a good general purpose broadphase. You can also try out btAxis3Sweep.
+	m_overlappingPairCache = new btDbvtBroadphase();
+
+	///the default constraint solver. For parallel processing you can use a different solver (see Extras/BulletMultiThreaded)
+	m_solver = new btSequentialImpulseConstraintSolver();
+
+	m_dynamicsWorld = new btDiscreteDynamicsWorld(m_dispatcher, m_overlappingPairCache, m_solver, m_collisionConfiguration);
+
+	m_dynamicsWorld->setGravity(btVector3(0, -9.81f, 0));
 }
 
 World* World::GetInstance()
@@ -259,6 +274,13 @@ World::~World()
 	for (const auto& pair : m_samplerStates) {
 		pair.second->Release();
 	}
+
+	// Delete Bullet resources
+	delete m_dynamicsWorld;
+	delete m_solver;
+	delete m_overlappingPairCache;
+	delete m_dispatcher;
+	delete m_collisionConfiguration;
 }
 
 
