@@ -185,11 +185,11 @@ void World::OnMouseDown(WPARAM buttonState, int x, int y)
 
 void World::OnMouseUp(WPARAM buttonState, int x, int y)
 {
-	for (Entity* entity : m_entities) {
-		for (Component* component : entity->GetAllComponents()) {
-			component->OnMouseUp(buttonState, x, y);
-		}
+for (Entity* entity : m_entities) {
+	for (Component* component : entity->GetAllComponents()) {
+		component->OnMouseUp(buttonState, x, y);
 	}
+}
 }
 
 void World::OnMouseMove(WPARAM buttonState, int x, int y)
@@ -234,6 +234,89 @@ void World::Tick(float deltaTime)
 	// Simulate physics
 	m_dynamicsWorld->stepSimulation(deltaTime, 10);
 
+	// This represents collisions that occurred only during this frame
+	// Used to determine when collisions ended
+	std::map<const btCollisionObject*, std::set<const btCollisionObject*>> collisionSnapshot;
+
+	// Dispatch collision events
+	int numManifolds = m_dynamicsWorld->getDispatcher()->getNumManifolds();
+	for (int i = 0; i < numManifolds; ++i) {
+		btPersistentManifold* contactManifold = m_dynamicsWorld->getDispatcher()->getManifoldByIndexInternal(i);
+		const btCollisionObject* body0 = contactManifold->getBody0();
+		const btCollisionObject* body1 = contactManifold->getBody1();
+		Entity* e0 = static_cast<Entity*>(body0->getUserPointer());
+		Entity* e1 = static_cast<Entity*>(body1->getUserPointer());
+
+		// Check if this is a new collision
+		if (m_collisionMap.count(body0) == 0) {
+			m_collisionMap[body0] = std::set<const btCollisionObject*>();
+			for (Component* component : e0->GetAllComponents()) {
+				component->OnCollisionBegin(e1);
+			}
+			for (Component* component : e1->GetAllComponents()) {
+				component->OnCollisionBegin(e0);
+			}
+		}
+		else if (m_collisionMap[body0].count(body1) == 0) {
+			m_collisionMap[body0].insert(body1);
+			for (Component* component : e0->GetAllComponents()) {
+				component->OnCollisionBegin(e1);
+			}
+			for (Component* component : e1->GetAllComponents()) {
+				component->OnCollisionBegin(e0);
+			}
+		}
+		// Recurring collision callback
+		else {
+			// Collision callback triggered each frame of the collision
+			for (Component* component : e0->GetAllComponents()) {
+				component->OnCollisionStay(e1);
+			}
+			for (Component* component : e1->GetAllComponents()) {
+				component->OnCollisionStay(e0);
+			}
+		}
+		// Update the snapshot
+		if (collisionSnapshot.count(body0) == 0) {
+			collisionSnapshot[body0] = std::set<const btCollisionObject*>();
+		}
+		collisionSnapshot[body0].insert(body1);
+	}
+	// Take the difference collisionMap - snapshot
+	// That value represents what's not being collided with anymore 
+	for (const auto& pair : m_collisionMap) {
+		Entity* e0 = static_cast<Entity*>(pair.first->getUserPointer());
+		// If the snapshot doesn't contain the key, all of the things we've 
+		// reported are colliding with it must not be colliding anymore
+		if (collisionSnapshot.count(pair.first) == 0) {
+			for (const btCollisionObject* coll : m_collisionMap[pair.first]) {
+				Entity* e1 = static_cast<Entity*>(coll->getUserPointer());
+				for (Component* component : e0->GetAllComponents()) {
+					component->OnCollisionEnd(e1);
+				}
+				for (Component* component : e1->GetAllComponents()) {
+					component->OnCollisionEnd(e0);
+				}
+			}
+		}
+		// Otherwise, check in the collision set for this key to see if there are any collisions
+		// that the snapshot doesn't have. Again, these are collisions that just ended.
+		else {
+			for (const btCollisionObject* coll : m_collisionMap[pair.first]) {
+				if (collisionSnapshot[pair.first].count(coll) == 0) {
+					Entity* e1 = static_cast<Entity*>(coll->getUserPointer());
+					for (Component* component : e0->GetAllComponents()) {
+						component->OnCollisionEnd(e1);
+					}
+					for (Component* component : e1->GetAllComponents()) {
+						component->OnCollisionEnd(e0);
+					}
+				}
+			}
+		}
+	}
+	// We need the map to look exactly like the snapshot now
+	m_collisionMap = collisionSnapshot;
 
 	for (Entity* entity : m_entities) {
 		for (Component* component : entity->GetAllComponents()) {

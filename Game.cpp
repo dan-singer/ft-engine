@@ -8,6 +8,7 @@
 #include "World.h"
 #include "Rotator.h"
 #include "RigidBodyComponent.h"
+#include "CollisionTester.h"
 
 // For the DirectX Math library
 using namespace DirectX;
@@ -100,6 +101,9 @@ void Game::CreateEntities()
 
 	Entity* cube1 = world->Instantiate("cube1");
 	cube1->GetTransform()->SetPosition(XMFLOAT3(0, 0, 0));
+	XMFLOAT4 rot;
+	XMStoreFloat4(&rot, XMQuaternionRotationRollPitchYaw(10.0f, 10.0f, 10.0f));
+	cube1->GetTransform()->SetRotation(rot);
 	cube1->AddComponent<MeshComponent>()->m_mesh = world->GetMesh("cube");
 	cube1->AddComponent<MaterialComponent>()->m_material = world->GetMaterial("metal");
 	RigidBodyComponent* rb = cube1->AddComponent<RigidBodyComponent>();

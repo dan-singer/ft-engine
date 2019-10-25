@@ -10,6 +10,7 @@
 #include "Mesh.h"
 #include "SimpleShader.h"
 #include "Material.h"
+#include <set>
 class CameraComponent;
 class Entity;
 
@@ -39,6 +40,7 @@ private:
 	btSequentialImpulseConstraintSolver* m_solver;
 	btDiscreteDynamicsWorld* m_dynamicsWorld;
 	btVector3 m_gravity = btVector3(0, -9.81f, 0);
+	std::map<const btCollisionObject*, std::set<const btCollisionObject*>> m_collisionMap;
 
 	World();
 	// --------------------------------------------------------

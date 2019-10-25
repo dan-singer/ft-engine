@@ -15,9 +15,9 @@ void RigidBodyComponent::SetSphereCollider(float radius)
 	m_shape = new btSphereShape((btScalar)radius);
 }
 
-void RigidBodyComponent::ApplyForce(btVector3 force)
+void RigidBodyComponent::ApplyImpulse(btVector3 force)
 {
-	m_body->applyCentralForce(force);
+	m_body->applyCentralImpulse(force);
 }
 
 void RigidBodyComponent::Start()
@@ -46,6 +46,9 @@ void RigidBodyComponent::Start()
 	m_motionState = new btDefaultMotionState(btTransform);
 	btRigidBody::btRigidBodyConstructionInfo rbInfo(m_mass, m_motionState, m_shape, localInertia);
 	m_body = new btRigidBody(rbInfo);
+
+	// Embed a link back to this component
+	m_body->setUserPointer((void*)GetOwner());
 
 	World::GetInstance()->GetPhysicsWorld()->addRigidBody(m_body);
 }

@@ -163,6 +163,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CameraComponent.cpp" />
+    <ClCompile Include="CollisionTester.cpp" />
     <ClCompile Include="Component.cpp" />
     <ClCompile Include="DebugMovement.cpp" />
     <ClCompile Include="DXCore.cpp" />
@@ -182,6 +183,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CameraComponent.h" />
+    <ClInclude Include="CollisionTester.h" />
     <ClInclude Include="Component.h" />
     <ClInclude Include="DebugMovement.h" />
     <ClInclude Include="DXCore.h" />

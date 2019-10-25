@@ -37,10 +37,10 @@ public:
 
 
 	// --------------------------------------------------------
-	// Applies a force to this Entity. 
+	// Applies an impulse to this Entity. 
 	// @param btVector3 force
 	// --------------------------------------------------------
-	void ApplyForce(btVector3 force);
+	void ApplyImpulse(btVector3 force);
 
 
 	virtual void Start() override;
