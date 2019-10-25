@@ -139,6 +139,12 @@ public:
 	void PrepareMaterial(DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 projection, DirectX::XMFLOAT3 cameraPos, LightComponent::Light lights[], int numLights);
 
 
+	// --------------------------------------------------------
+	// Manually call start on all Components. Only use this if 
+	// you've just manually instantiated an Entity.
+	// --------------------------------------------------------
+	void StartAllComponents();
+
 	virtual ~Entity();
 
 

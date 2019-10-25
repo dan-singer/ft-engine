@@ -65,7 +65,9 @@ public:
 	void SetGravity(btVector3 gravity);
 
 	// --------------------------------------------------------
-	// Create an Entity in the world.
+	// Create an Entity in the world. 
+	// Note: you'll have to manually call Start on all of the components
+	// After Instantiating an Entity.
 	// @param const std::string& name name of the entity
  	// @returns Entity* the created Entity pointer
 	// --------------------------------------------------------
