@@ -27,6 +27,13 @@ void Entity::PrepareMaterial(DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 proje
 	ps->CopyAllBufferData();
 }
 
+void Entity::StartAllComponents()
+{
+	for (Component* component : m_components) {
+		component->Start();
+	}
+}
+
 Entity::~Entity()
 {
 	for (Component* component : m_components) {

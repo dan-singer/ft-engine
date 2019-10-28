@@ -5,10 +5,26 @@
 #include <algorithm>
 #include <iostream>
 #include <WICTextureLoader.h>
+#include "RigidBodyComponent.h"
 
 World::World()
 {
+	// Bullet Physics Setup. See https://github.com/bulletphysics/bullet3/blob/master/examples/HelloWorld/HelloWorld.cpp
+	///collision configuration contains default setup for memory, collision setup. Advanced users can create their own configuration.
+	m_collisionConfiguration = new btDefaultCollisionConfiguration();
 
+	///use the default collision dispatcher. For parallel processing you can use a diffent dispatcher (see Extras/BulletMultiThreaded)
+	m_dispatcher = new btCollisionDispatcher(m_collisionConfiguration);
+
+	///btDbvtBroadphase is a good general purpose broadphase. You can also try out btAxis3Sweep.
+	m_overlappingPairCache = new btDbvtBroadphase();
+
+	///the default constraint solver. For parallel processing you can use a different solver (see Extras/BulletMultiThreaded)
+	m_solver = new btSequentialImpulseConstraintSolver();
+
+	m_dynamicsWorld = new btDiscreteDynamicsWorld(m_dispatcher, m_overlappingPairCache, m_solver, m_collisionConfiguration);
+
+	m_dynamicsWorld->setGravity(m_gravity);
 }
 
 World* World::GetInstance()
@@ -26,6 +42,12 @@ void World::RebuildLights()
 			m_lights[m_activeLightCount++] = lightComp->m_data;
 		}
 	}
+}
+
+void World::SetGravity(btVector3 gravity)
+{
+	m_gravity = gravity;
+	m_dynamicsWorld->setGravity(gravity);
 }
 
 Entity* World::Instantiate(const std::string& name)
@@ -57,6 +79,16 @@ Entity* World::FindWithTag(const std::string& tag)
 
 void World::Destroy(Entity* entity)
 {
+	// Rigidbodies need to be deleted separately
+	RigidBodyComponent* rb = entity->GetComponent<RigidBodyComponent>();
+	if (rb) {
+		btRigidBody* body = rb->GetBody();
+		if (body && body->getMotionState()) {
+			delete body->getMotionState();
+		}
+		m_dynamicsWorld->removeCollisionObject(body);
+		delete body;
+	}
 	delete entity;
 	m_entities.erase(std::find(m_entities.begin(), m_entities.end(), entity));
 }
@@ -153,11 +185,11 @@ void World::OnMouseDown(WPARAM buttonState, int x, int y)
 
 void World::OnMouseUp(WPARAM buttonState, int x, int y)
 {
-	for (Entity* entity : m_entities) {
-		for (Component* component : entity->GetAllComponents()) {
-			component->OnMouseUp(buttonState, x, y);
-		}
+for (Entity* entity : m_entities) {
+	for (Component* component : entity->GetAllComponents()) {
+		component->OnMouseUp(buttonState, x, y);
 	}
+}
 }
 
 void World::OnMouseMove(WPARAM buttonState, int x, int y)
@@ -199,6 +231,93 @@ void World::Start()
 
 void World::Tick(float deltaTime)
 {
+	// Simulate physics
+	m_dynamicsWorld->stepSimulation(deltaTime, 10);
+
+	// This represents collisions that occurred only during this frame
+	// Used to determine when collisions ended
+	std::map<const btCollisionObject*, std::set<const btCollisionObject*>> collisionSnapshot;
+
+	// Dispatch collision events
+	int numManifolds = m_dynamicsWorld->getDispatcher()->getNumManifolds();
+	for (int i = 0; i < numManifolds; ++i) {
+		btPersistentManifold* contactManifold = m_dynamicsWorld->getDispatcher()->getManifoldByIndexInternal(i);
+		const btCollisionObject* body0 = contactManifold->getBody0();
+		const btCollisionObject* body1 = contactManifold->getBody1();
+		Entity* e0 = static_cast<Entity*>(body0->getUserPointer());
+		Entity* e1 = static_cast<Entity*>(body1->getUserPointer());
+
+		// Check if this is a new collision
+		if (m_collisionMap.count(body0) == 0) {
+			m_collisionMap[body0] = std::set<const btCollisionObject*>();
+			for (Component* component : e0->GetAllComponents()) {
+				component->OnCollisionBegin(e1);
+			}
+			for (Component* component : e1->GetAllComponents()) {
+				component->OnCollisionBegin(e0);
+			}
+		}
+		else if (m_collisionMap[body0].count(body1) == 0) {
+			m_collisionMap[body0].insert(body1);
+			for (Component* component : e0->GetAllComponents()) {
+				component->OnCollisionBegin(e1);
+			}
+			for (Component* component : e1->GetAllComponents()) {
+				component->OnCollisionBegin(e0);
+			}
+		}
+		// Recurring collision callback
+		else {
+			// Collision callback triggered each frame of the collision
+			for (Component* component : e0->GetAllComponents()) {
+				component->OnCollisionStay(e1);
+			}
+			for (Component* component : e1->GetAllComponents()) {
+				component->OnCollisionStay(e0);
+			}
+		}
+		// Update the snapshot
+		if (collisionSnapshot.count(body0) == 0) {
+			collisionSnapshot[body0] = std::set<const btCollisionObject*>();
+		}
+		collisionSnapshot[body0].insert(body1);
+	}
+	// Take the difference collisionMap - snapshot
+	// That value represents what's not being collided with anymore 
+	for (const auto& pair : m_collisionMap) {
+		Entity* e0 = static_cast<Entity*>(pair.first->getUserPointer());
+		// If the snapshot doesn't contain the key, all of the things we've 
+		// reported are colliding with it must not be colliding anymore
+		if (collisionSnapshot.count(pair.first) == 0) {
+			for (const btCollisionObject* coll : m_collisionMap[pair.first]) {
+				Entity* e1 = static_cast<Entity*>(coll->getUserPointer());
+				for (Component* component : e0->GetAllComponents()) {
+					component->OnCollisionEnd(e1);
+				}
+				for (Component* component : e1->GetAllComponents()) {
+					component->OnCollisionEnd(e0);
+				}
+			}
+		}
+		// Otherwise, check in the collision set for this key to see if there are any collisions
+		// that the snapshot doesn't have. Again, these are collisions that just ended.
+		else {
+			for (const btCollisionObject* coll : m_collisionMap[pair.first]) {
+				if (collisionSnapshot[pair.first].count(coll) == 0) {
+					Entity* e1 = static_cast<Entity*>(coll->getUserPointer());
+					for (Component* component : e0->GetAllComponents()) {
+						component->OnCollisionEnd(e1);
+					}
+					for (Component* component : e1->GetAllComponents()) {
+						component->OnCollisionEnd(e0);
+					}
+				}
+			}
+		}
+	}
+	// We need the map to look exactly like the snapshot now
+	m_collisionMap = collisionSnapshot;
+
 	for (Entity* entity : m_entities) {
 		for (Component* component : entity->GetAllComponents()) {
 			component->Tick(deltaTime);
@@ -236,6 +355,23 @@ void World::DrawEntities(ID3D11DeviceContext* context)
 
 World::~World()
 {
+	// Delete Bullet resources
+	for (int i = m_dynamicsWorld->getNumCollisionObjects() - 1; i >= 0; --i) {
+		btCollisionObject* obj = m_dynamicsWorld->getCollisionObjectArray()[i];
+		btRigidBody* body = btRigidBody::upcast(obj);
+		if (body && body->getMotionState()) {
+			delete body->getMotionState();
+		}
+		m_dynamicsWorld->removeCollisionObject(obj);
+		delete obj;
+	}
+	delete m_dynamicsWorld;
+	delete m_solver;
+	delete m_overlappingPairCache;
+	delete m_dispatcher;
+	delete m_collisionConfiguration;
+
+
 	// Delete the entities
 	for (Entity* entity : m_entities) {
 		delete entity;
@@ -259,6 +395,8 @@ World::~World()
 	for (const auto& pair : m_samplerStates) {
 		pair.second->Release();
 	}
+
+
 }
 
 

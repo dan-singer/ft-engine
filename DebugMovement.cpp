@@ -44,7 +44,7 @@ void DebugMovement::Tick(float deltaTime)
 	}
 	translation = XMVector3Normalize(translation);
 	translation *= deltaTime;
-	XMVECTOR newPos = position + translation;
+	XMVECTOR newPos = XMVectorAdd(position, translation);
 
 	XMFLOAT3 newPosData;
 	XMStoreFloat3(&newPosData, newPos);

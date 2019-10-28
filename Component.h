@@ -1,7 +1,7 @@
 #pragma once
 class Entity;
 #include <Windows.h>
-
+#include <bullet/btBulletDynamicsCommon.h>
 
 // --------------------------------------------------------
 // Abstract Component class which encapsulates state and 
@@ -39,6 +39,13 @@ public:
 	virtual void OnMouseWheel(float wheelDelta, int x, int y) { }
 	virtual void OnResize(int width, int height) { }
 	///////////////////////////////////////////////////////////////
+	
+	// Collision Methods //////////////////////////////////////////
+	virtual void OnCollisionBegin(Entity* other) { }
+	virtual void OnCollisionStay(Entity* other) { }
+	virtual void OnCollisionEnd(Entity* other) { }
+	///////////////////////////////////////////////////////////////
+
 	
 	// --------------------------------------------------------
 	// Returns the owner of this Component

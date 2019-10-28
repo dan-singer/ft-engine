@@ -5,10 +5,12 @@
 #include <Windows.h>
 #include <d3d11.h>
 #include <map>
+#include <bullet/btBulletDynamicsCommon.h>
 #include "LightComponent.h"
 #include "Mesh.h"
 #include "SimpleShader.h"
 #include "Material.h"
+#include <set>
 class CameraComponent;
 class Entity;
 
@@ -30,6 +32,16 @@ private:
 	std::map<std::string, ID3D11SamplerState*> m_samplerStates;
 	LightComponent::Light m_lights[MAX_LIGHTS];
 	int m_activeLightCount = 0;
+
+	// Bullet
+	btDefaultCollisionConfiguration* m_collisionConfiguration;
+	btCollisionDispatcher* m_dispatcher;
+	btBroadphaseInterface* m_overlappingPairCache;
+	btSequentialImpulseConstraintSolver* m_solver;
+	btDiscreteDynamicsWorld* m_dynamicsWorld;
+	btVector3 m_gravity = btVector3(0, -9.81f, 0);
+	std::map<const btCollisionObject*, std::set<const btCollisionObject*>> m_collisionMap;
+
 	World();
 	// --------------------------------------------------------
 	// Rebuilds the array of light structs that will be sent to the GPU.
@@ -46,7 +58,16 @@ public:
 
 
 	// --------------------------------------------------------
-	// Create an Entity in the world.
+	// Returns a pointer to the Bullet library's world object
+	// --------------------------------------------------------
+	btDiscreteDynamicsWorld* GetPhysicsWorld() { return m_dynamicsWorld; }
+
+	void SetGravity(btVector3 gravity);
+
+	// --------------------------------------------------------
+	// Create an Entity in the world. 
+	// Note: you'll have to manually call Start on all of the components
+	// After Instantiating an Entity.
 	// @param const std::string& name name of the entity
  	// @returns Entity* the created Entity pointer
 	// --------------------------------------------------------
