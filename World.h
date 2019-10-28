@@ -11,6 +11,7 @@
 #include "SimpleShader.h"
 #include "Material.h"
 #include <set>
+#include <queue>
 class CameraComponent;
 class Entity;
 
@@ -30,6 +31,8 @@ private:
 	std::map<std::string, Material*> m_materials;
 	std::map<std::string, ID3D11ShaderResourceView*> m_SRVs;
 	std::map<std::string, ID3D11SamplerState*> m_samplerStates;
+	std::queue<Entity*> m_spawnQueue;
+	std::queue<Entity*> m_destroyQueue;
 	LightComponent::Light m_lights[MAX_LIGHTS];
 	int m_activeLightCount = 0;
 
@@ -48,6 +51,11 @@ private:
 	// --------------------------------------------------------
 	void RebuildLights();
 
+	// --------------------------------------------------------
+	// Spawns entities in the spawn queue and destroys those 
+	// in the destroy queue
+	// --------------------------------------------------------
+	void Flush();
 public:
 	CameraComponent* m_mainCamera = nullptr;
 

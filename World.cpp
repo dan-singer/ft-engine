@@ -44,6 +44,57 @@ void World::RebuildLights()
 	}
 }
 
+void World::Flush()
+{
+	while (!m_spawnQueue.empty()) {
+		Entity* toAdd = m_spawnQueue.front();
+		m_entities.push_back(toAdd);
+		m_spawnQueue.pop();
+	}
+
+	while (!m_destroyQueue.empty()) {
+		Entity* toDestroy = m_destroyQueue.front();
+
+		// Remove destroyed entities from the collision map
+		for (auto it = m_collisionMap.cbegin(); it != m_collisionMap.cend(); ) {
+			auto& pair = *it;
+			Entity* e0 = static_cast<Entity*>(pair.first->getUserPointer());
+			if (toDestroy == e0) {
+				m_collisionMap.erase(it++);
+				continue;
+			}
+			else {
+				for (const btCollisionObject* coll : m_collisionMap[pair.first]) {
+					Entity* e1 = static_cast<Entity*>(coll->getUserPointer());
+					if (toDestroy == e1) {
+						m_collisionMap[pair.first].erase(coll);
+						break;
+					}
+				}
+			}
+			++it;
+		}
+
+
+		// Rigidbodies need to be deleted separately
+		RigidBodyComponent* rb = toDestroy->GetComponent<RigidBodyComponent>();
+		if (rb) {
+			btRigidBody* body = rb->GetBody();
+			if (body && body->getMotionState()) {
+				delete body->getMotionState();
+			}
+			m_dynamicsWorld->removeCollisionObject(body);
+			delete body;
+		}
+		m_entities.erase(std::find(m_entities.begin(), m_entities.end(), toDestroy));
+		m_destroyQueue.pop();
+
+
+
+		delete toDestroy;
+	}
+}
+
 void World::SetGravity(btVector3 gravity)
 {
 	m_gravity = gravity;
@@ -53,7 +104,7 @@ void World::SetGravity(btVector3 gravity)
 Entity* World::Instantiate(const std::string& name)
 {
 	Entity* entity = new Entity(name);
-	m_entities.push_back(entity);
+	m_spawnQueue.push(entity); // Hold off on adding to the internal vector until all iterations over it are finished
 	return entity;
 }
 
@@ -79,18 +130,7 @@ Entity* World::FindWithTag(const std::string& tag)
 
 void World::Destroy(Entity* entity)
 {
-	// Rigidbodies need to be deleted separately
-	RigidBodyComponent* rb = entity->GetComponent<RigidBodyComponent>();
-	if (rb) {
-		btRigidBody* body = rb->GetBody();
-		if (body && body->getMotionState()) {
-			delete body->getMotionState();
-		}
-		m_dynamicsWorld->removeCollisionObject(body);
-		delete body;
-	}
-	delete entity;
-	m_entities.erase(std::find(m_entities.begin(), m_entities.end(), entity));
+	m_destroyQueue.push(entity);
 }
 
 Mesh* World::CreateMesh(const std::string& name, Vertex* vertices, int numVertices, unsigned int* indices, int numIndices, ID3D11Device* device)
@@ -221,6 +261,7 @@ void World::OnResize(int width, int height)
 
 void World::Start()
 {
+	Flush();
 	RebuildLights();
 	for (Entity* entity : m_entities) {
 		for (Component* component : entity->GetAllComponents()) {
@@ -231,6 +272,9 @@ void World::Start()
 
 void World::Tick(float deltaTime)
 {
+	// Spawn and destroy entities **before** iterating through them
+	Flush();
+
 	// Simulate physics
 	m_dynamicsWorld->stepSimulation(deltaTime, 10);
 
