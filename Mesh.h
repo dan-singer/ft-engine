@@ -13,6 +13,7 @@ private:
 	ID3D11Buffer* m_indexBuffer = nullptr;
 	int m_indexBufferSize = 0;
 
+	void CalculateTangents(Vertex* verts, int numVerts, unsigned int* indices, int numIndices);
 	void Initialize(Vertex* vertices, int numVertices, unsigned int* indices, int numIndices, ID3D11Device* device);
 
 public:

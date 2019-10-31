@@ -12,9 +12,10 @@ struct VertexToPixel
 	//  |    |                |
 	//  v    v                v
 	float4 position		: SV_POSITION;
-	float3 normal		: NORMAL;
-    float3 worldPos		: POSITION;
 	float2 uv			: TEXCOORD;
+	float3 normal		: NORMAL;
+	float3 tangent		: TANGENT;
+	float3 worldPos		: POSITION;
 };
 
 struct LightStruct {
@@ -37,6 +38,7 @@ cbuffer externalData : register(b0)
 };
 
 Texture2D diffuseTexture : register(t0);
+Texture2D normalTexture : register(t1);
 SamplerState samplerState : register(s0);
 
 float4 directionalLight(int index, float4 surfaceColor, float3 normal, float3 toCamera) 
@@ -107,10 +109,27 @@ float4 spotLight(int index, float4 surfaceColor, float3 normal, float3 toCamera,
 float4 main(VertexToPixel input) : SV_TARGET
 {
 	input.normal = normalize(input.normal);
+	input.tangent = normalize(input.tangent);
+
     float4 finalColor = float4(0,0,0,1);
     float3 toCamera = normalize(cameraPos - input.worldPos);
 
 	float4 surfaceColor = diffuseTexture.Sample(samplerState, input.uv);
+	float4 normalVector = normalTexture.Sample(samplerState, input.uv);
+
+	// === Normal mapping here!  We need a new normal for the rest of the lighting steps ====
+
+	// Expand (unpack) the normal from the normal map back to the [0,1]
+	float3 normalFromMap = normalVector.rgb * 2 - 1;
+
+	float3 N = input.normal;
+	float3 T = normalize(input.tangent - N * dot(input.tangent, N)); // Orthogonalize!
+	float3 B = cross(T, N); // The bi-tangent
+
+	float3x3 TBN = float3x3(T, B, N);
+
+	// Rotate the normal from the normal map by our TBN rotation matrix
+	input.normal = normalize(mul(normalFromMap, TBN));
 
     for (int i = 0; i < lightCount; ++i)
     {

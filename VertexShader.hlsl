@@ -25,8 +25,9 @@ struct VertexShaderInput
 	//  |    |                |
 	//  v    v                v
 	float3 position		: POSITION;     // XYZ position
-	float3 normal		: NORMAL;
 	float2 uv			: TEXCOORD;
+	float3 normal		: NORMAL;
+	float3 tangent		: TANGENT;
 };
 
 // Struct representing the data we're sending down the pipeline
@@ -41,10 +42,11 @@ struct VertexToPixel
 	//  |   Name          Semantic
 	//  |    |                |
 	//  v    v                v
-	float4 position		: SV_POSITION;	// XYZW position (System Value Position)
-	float3 normal		: NORMAL;
-	float3 worldPos		: POSITION;
+	float4 position		: SV_POSITION;
 	float2 uv			: TEXCOORD;
+	float3 normal		: NORMAL;
+	float3 tangent		: TANGENT;
+	float3 worldPos		: POSITION;
 };
 
 // --------------------------------------------------------
@@ -74,7 +76,8 @@ VertexToPixel main( VertexShaderInput input )
 	// The result is essentially the position (XY) of the vertex on our 2D 
 	// screen and the distance (Z) from the camera (the "depth" of the pixel)
 	output.position = mul(float4(input.position, 1.0f), worldViewProj);
-	output.normal = mul(input.normal, (float3x3)world);
+	output.normal = normalize(mul(input.normal, (float3x3)world));
+	output.tangent = normalize(mul(input.tangent, (float3x3)world));
     output.worldPos = mul(float4(input.position, 1.0f), world).xyz;
 	output.uv = input.uv;
 
