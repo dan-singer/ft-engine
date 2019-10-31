@@ -178,9 +178,9 @@ SimplePixelShader* World::GetPixelShader(const std::string& name)
 	return m_pixelShaders[name];
 }
 
-Material* World::CreateMaterial(const std::string& name, SimpleVertexShader* vertexShader, SimplePixelShader* pixelShader, ID3D11ShaderResourceView* shaderResourceView, ID3D11SamplerState* samplerState)
+Material* World::CreateMaterial(const std::string& name, SimpleVertexShader* vertexShader, SimplePixelShader* pixelShader, ID3D11ShaderResourceView* diffuseSRV, ID3D11ShaderResourceView* normalSRV, ID3D11SamplerState* samplerState)
 {
-	Material* material = new Material(vertexShader, pixelShader, shaderResourceView, samplerState);
+	Material* material = new Material(vertexShader, pixelShader, diffuseSRV, normalSRV, samplerState);
 	m_materials[name] = material;
 	return material;
 }

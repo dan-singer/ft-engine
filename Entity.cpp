@@ -19,7 +19,8 @@ void Entity::PrepareMaterial(DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 proje
 
 	ps->SetFloat3("cameraPos", cameraPos);
 	ps->SetSamplerState("samplerState", material->GetSamplerState());
-	ps->SetShaderResourceView("diffuseTexture", material->GetShaderResourceView());
+	ps->SetShaderResourceView("diffuseTexture", material->GetDiffuse());
+	ps->SetShaderResourceView("normalTexture", material->GetNormals());
 	ps->SetData("lights", lights, sizeof(LightComponent::Light) * MAX_LIGHTS);
 	ps->SetInt("lightCount", numLights);
 	ps->SetFloat("shininess", material->m_shiniess);

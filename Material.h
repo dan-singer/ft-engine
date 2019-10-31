@@ -11,7 +11,8 @@ class Material
 private:
 	SimpleVertexShader* m_vertexShader;
 	SimplePixelShader* m_pixelShader;
-	ID3D11ShaderResourceView* m_shaderResourceView;
+	ID3D11ShaderResourceView* m_diffuseSRV;
+	ID3D11ShaderResourceView* m_normalSRV;
 	ID3D11SamplerState* m_samplerState;
 public:
 	float m_shiniess = 128.0f;
@@ -24,11 +25,12 @@ public:
 	// @param ID3D11SamplerState * samplerState
 	// --------------------------------------------------------
 	Material(SimpleVertexShader* vertexShader, SimplePixelShader* pixelShader, 
-		ID3D11ShaderResourceView* shaderResourceView, ID3D11SamplerState* samplerState);
+		ID3D11ShaderResourceView* diffuseSRV, ID3D11ShaderResourceView* normalSRV, ID3D11SamplerState* samplerState);
 
 	SimpleVertexShader* GetVertexShader() { return m_vertexShader; }
 	SimplePixelShader*  GetPixelShader()  { return m_pixelShader;  }
-	ID3D11ShaderResourceView* GetShaderResourceView() { return m_shaderResourceView; }
+	ID3D11ShaderResourceView* GetDiffuse() { return m_diffuseSRV; }
+	ID3D11ShaderResourceView* GetNormals() { return m_normalSRV; }
 	ID3D11SamplerState* GetSamplerState() { return m_samplerState; }
 };
 
