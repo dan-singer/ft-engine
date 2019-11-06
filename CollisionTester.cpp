@@ -1,5 +1,8 @@
 #include "CollisionTester.h"
 #include "Entity.h"
+#include <DirectXMath.h>
+
+using namespace DirectX;
 
 void CollisionTester::Start()
 {
@@ -11,7 +14,7 @@ void CollisionTester::Tick(float deltaTime)
 
 void CollisionTester::OnMouseDown(WPARAM buttonState, int x, int y)
 {
-	GetOwner()->GetRigidBody()->ApplyImpulse(btVector3(0, 10, 0));
+	GetOwner()->GetRigidBody()->ApplyImpulse(XMFLOAT3(0, 10, 0));
 }
 
 void CollisionTester::OnCollisionBegin(Entity* other)

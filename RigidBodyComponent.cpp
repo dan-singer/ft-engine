@@ -1,7 +1,6 @@
 #include "RigidBodyComponent.h"
 #include "Transform.h"
 #include "Entity.h"
-#include <DirectXMath.h>
 
 using namespace DirectX;
 
@@ -15,9 +14,11 @@ void RigidBodyComponent::SetSphereCollider(float radius)
 	m_shape = new btSphereShape((btScalar)radius);
 }
 
-void RigidBodyComponent::ApplyImpulse(btVector3 force)
+void RigidBodyComponent::ApplyImpulse(DirectX::XMFLOAT3 impulse)
 {
-	m_body->applyCentralImpulse(force);
+	// Convert to a btVector3
+	btVector3 btForce(impulse.x, impulse.y, impulse.z);
+	m_body->applyCentralImpulse(btForce);
 }
 
 void RigidBodyComponent::Start()
@@ -55,16 +56,36 @@ void RigidBodyComponent::Start()
 
 void RigidBodyComponent::Tick(float deltaTime)
 {
-	// Retrieve the motion state's transform
-	btTransform btTransform;
-	m_motionState->getWorldTransform(btTransform);
-	btVector3 origin = btTransform.getOrigin();
-	btQuaternion rotation = btTransform.getRotation();
-	
-	// Copy over the btTransform to the Transform component
-	Transform* transform = GetOwner()->GetTransform();
-	transform->SetPosition(XMFLOAT3(origin.x(), origin.y(), origin.z()));
-	transform->SetRotation(XMFLOAT4(rotation.x(), rotation.y(), rotation.z(), rotation.w()));
+	if (m_mass > 0) {
+		// Retrieve the motion state's transform
+		btTransform btTransform;
+		m_motionState->getWorldTransform(btTransform);
+		btVector3 origin = btTransform.getOrigin();
+		btQuaternion rotation = btTransform.getRotation();
+
+		// Copy over the btTransform to the Transform component
+		Transform* transform = GetOwner()->GetTransform();
+		transform->SetPosition(XMFLOAT3(origin.x(), origin.y(), origin.z()));
+		transform->SetRotation(XMFLOAT4(rotation.x(), rotation.y(), rotation.z(), rotation.w()));
+	}
+	else {
+		// If this is a static body, copy over the position from Transform into the bullet body
+		Transform* transform = GetOwner()->GetTransform();
+		XMFLOAT3 pos = transform->GetPosition();
+		XMFLOAT4 rot = transform->GetRotation();
+
+		btVector3 origin = btVector3(pos.x, pos.y, pos.z);
+		btQuaternion orientation = btQuaternion(rot.x, rot.y, rot.z, rot.w);
+
+		btTransform newTransform;
+		newTransform.setOrigin(origin);
+		newTransform.setRotation(orientation);
+
+		m_body->setWorldTransform(newTransform);
+
+	}
+
+
 }
 
 RigidBodyComponent::~RigidBodyComponent()

@@ -1,6 +1,7 @@
 #pragma once
 #include "Component.h"
 #include <bullet/btBulletDynamicsCommon.h>
+#include <DirectXMath.h>
 
 // --------------------------------------------------------
 // Abstraction of Bullet physics to allow for easy
@@ -38,9 +39,9 @@ public:
 
 	// --------------------------------------------------------
 	// Applies an impulse to this Entity. 
-	// @param btVector3 force
+	// @param XMFLOAT3 impulse
 	// --------------------------------------------------------
-	void ApplyImpulse(btVector3 force);
+	void ApplyImpulse(DirectX::XMFLOAT3 impulse);
 
 
 	virtual void Start() override;

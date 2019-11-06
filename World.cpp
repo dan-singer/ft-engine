@@ -86,12 +86,15 @@ void World::Flush()
 			m_dynamicsWorld->removeCollisionObject(body);
 			delete body;
 		}
-		m_entities.erase(std::find(m_entities.begin(), m_entities.end(), toDestroy));
+
+		// Somehow, the thing we're trying to destroy may not actually be in the entities list. 
+		// Guard against this condition
+		auto destroyLoc = std::find(m_entities.begin(), m_entities.end(), toDestroy);
+		if (destroyLoc != m_entities.end()) {
+			m_entities.erase(destroyLoc);
+			delete toDestroy;
+		}
 		m_destroyQueue.pop();
-
-
-
-		delete toDestroy;
 	}
 }
 
@@ -225,11 +228,11 @@ void World::OnMouseDown(WPARAM buttonState, int x, int y)
 
 void World::OnMouseUp(WPARAM buttonState, int x, int y)
 {
-for (Entity* entity : m_entities) {
-	for (Component* component : entity->GetAllComponents()) {
-		component->OnMouseUp(buttonState, x, y);
+	for (Entity* entity : m_entities) {
+		for (Component* component : entity->GetAllComponents()) {
+			component->OnMouseUp(buttonState, x, y);
+		}
 	}
-}
 }
 
 void World::OnMouseMove(WPARAM buttonState, int x, int y)
@@ -272,8 +275,7 @@ void World::Start()
 
 void World::Tick(float deltaTime)
 {
-	// Spawn and destroy entities **before** iterating through them
-	Flush();
+
 
 	// Simulate physics
 	m_dynamicsWorld->stepSimulation(deltaTime, 10);
@@ -367,6 +369,9 @@ void World::Tick(float deltaTime)
 			component->Tick(deltaTime);
 		}
 	}
+
+	// Spawn and destroy entities **after** iterating through them
+	Flush();
 }
 
 void World::DrawEntities(ID3D11DeviceContext* context)
@@ -386,8 +391,8 @@ void World::DrawEntities(ID3D11DeviceContext* context)
 		entity->GetTransform()->RecalculateWorldMatrix();
 		if (entity->GetMesh() && entity->GetMaterial()) {
 			entity->PrepareMaterial(
-				m_mainCamera->GetViewMatrix(), m_mainCamera->GetProjectionMatrix(), 
-				m_mainCamera->GetOwner()->GetTransform()->GetPosition(), 
+				m_mainCamera->GetViewMatrix(), m_mainCamera->GetProjectionMatrix(),
+				m_mainCamera->GetOwner()->GetTransform()->GetPosition(),
 				m_lights, m_activeLightCount);
 			ID3D11Buffer* entityVB = entity->GetMesh()->GetVertexBuffer();
 			context->IASetVertexBuffers(0, 1, &entityVB, &stride, &offset);
