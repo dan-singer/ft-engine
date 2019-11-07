@@ -7,6 +7,8 @@
 #include <WICTextureLoader.h>
 #include "RigidBodyComponent.h"
 
+using namespace DirectX;
+
 World::World()
 {
 	// Bullet Physics Setup. See https://github.com/bulletphysics/bullet3/blob/master/examples/HelloWorld/HelloWorld.cpp
@@ -196,7 +198,7 @@ Material* World::GetMaterial(const std::string& name)
 ID3D11ShaderResourceView* World::CreateTexture(const std::string& name, ID3D11Device* device, ID3D11DeviceContext* context, const wchar_t* fileName)
 {
 	m_SRVs[name] = nullptr;
-	DirectX::CreateWICTextureFromFile(device, context, fileName, 0, &m_SRVs[name]);
+	CreateWICTextureFromFile(device, context, fileName, 0, &m_SRVs[name]);
 	return m_SRVs[name];
 }
 
@@ -215,6 +217,18 @@ ID3D11SamplerState* World::CreateSamplerState(const std::string& name, D3D11_SAM
 ID3D11SamplerState* World::GetSamplerState(const std::string& name)
 {
 	return m_samplerStates[name];
+}
+
+DirectX::SpriteBatch* World::CreateSpriteBatch(const std::string& name, ID3D11DeviceContext* context)
+{
+	SpriteBatch* spriteBatch = new DirectX::SpriteBatch(context);
+	m_spriteBatches[name] = spriteBatch;
+	return spriteBatch;
+}
+
+DirectX::SpriteBatch* World::GetSpriteBatch(const std::string& name)
+{
+	return m_spriteBatches[name];
 }
 
 void World::OnMouseDown(WPARAM buttonState, int x, int y)
@@ -374,7 +388,7 @@ void World::Tick(float deltaTime)
 	Flush();
 }
 
-void World::DrawEntities(ID3D11DeviceContext* context)
+void World::DrawEntities(ID3D11DeviceContext* context, DirectX::SpriteBatch* spriteBatch, int screenWidth, int screenHeight)
 {
 	if (!m_mainCamera) {
 		return;
@@ -389,7 +403,94 @@ void World::DrawEntities(ID3D11DeviceContext* context)
 	UINT offset = 0;
 	for (Entity* entity : m_entities) {
 		entity->GetTransform()->RecalculateWorldMatrix();
-		if (entity->GetMesh() && entity->GetMaterial()) {
+
+		// Render UI Elements
+		if (entity->GetUITransform()) {
+			Material* mat = entity->GetMaterial();
+			if (mat) {
+				ID3D11ShaderResourceView* srv = mat->GetDiffuse();
+				Transform* transform = entity->GetTransform();
+				UITransform* uiTransform = entity->GetUITransform();
+				DirectX::XMFLOAT3 pos = transform->GetPosition();
+
+				XMFLOAT2 anchorOrigin;
+				switch (uiTransform->m_anchor)	
+				{
+				case Anchor::TOP_LEFT:
+				{
+					anchorOrigin.x = 0;
+					anchorOrigin.y = 0;
+					break;
+				}
+				case Anchor::TOP_CENTER:
+				{
+					anchorOrigin.x = screenWidth / 2;
+					anchorOrigin.y = 0;
+					break;
+				}
+				case Anchor::TOP_RIGHT:
+				{
+					anchorOrigin.x = screenWidth;
+					anchorOrigin.y = 0;
+					break;
+				}
+				case Anchor::CENTER_LEFT:
+				{
+					anchorOrigin.x = 0;
+					anchorOrigin.y = screenHeight / 2;
+					break;
+				}
+				case Anchor::CENTER_CENTER:
+				{
+					anchorOrigin.x = screenWidth / 2;
+					anchorOrigin.y = screenHeight / 2;
+					break;
+				}
+				case Anchor::CENTER_RIGHT:
+				{
+					anchorOrigin.x = screenWidth;
+					anchorOrigin.y = screenHeight / 2;
+					break;
+				}
+				case Anchor::BOTTOM_LEFT:
+				{
+					anchorOrigin.x = 0;
+					anchorOrigin.y = screenHeight;
+					break;
+				}
+				case Anchor::BOTTOM_CENTER:
+				{
+					anchorOrigin.x = screenWidth / 2;
+					anchorOrigin.y = screenHeight;
+					break;
+				}
+				case Anchor::BOTTOM_RIGHT:
+				{
+					anchorOrigin.x = screenWidth;
+					anchorOrigin.y = screenHeight;
+					break;
+				}
+				}
+				XMFLOAT2 finalPosition = XMFLOAT2(anchorOrigin.x + pos.x, anchorOrigin.y + pos.y);
+				RECT dest;
+				dest.left = finalPosition.x;
+				dest.right = dest.left + uiTransform->m_dimensions.x;
+				dest.top = finalPosition.y;
+				dest.bottom = dest.top + uiTransform->m_dimensions.y;
+
+				XMFLOAT2 origin = XMFLOAT2(uiTransform->m_normalizedOrigin.x * uiTransform->m_dimensions.x,
+					uiTransform->m_normalizedOrigin.y * uiTransform->m_dimensions.y);
+
+				spriteBatch->Begin();
+				// TODO determine why origin is not working
+				spriteBatch->Draw(srv, dest, nullptr, Colors::White, uiTransform->m_rotation, origin);
+				spriteBatch->End();
+
+			}
+
+		}
+		// Render traditional 3D entities
+		else if (entity->GetMesh() && entity->GetMaterial()) {
 			entity->PrepareMaterial(
 				m_mainCamera->GetViewMatrix(), m_mainCamera->GetProjectionMatrix(),
 				m_mainCamera->GetOwner()->GetTransform()->GetPosition(),
@@ -400,6 +501,7 @@ void World::DrawEntities(ID3D11DeviceContext* context)
 			context->DrawIndexed(entity->GetMesh()->GetIndexCount(), 0, 0);
 		}
 	}
+
 }
 
 World::~World()
@@ -444,7 +546,9 @@ World::~World()
 	for (const auto& pair : m_samplerStates) {
 		pair.second->Release();
 	}
-
+	for (const auto& pair : m_spriteBatches) {
+		delete pair.second;
+	}
 
 }
 

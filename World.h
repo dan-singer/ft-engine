@@ -12,6 +12,7 @@
 #include "Material.h"
 #include <set>
 #include <queue>
+#include <SpriteBatch.h>
 class CameraComponent;
 class Entity;
 
@@ -31,6 +32,7 @@ private:
 	std::map<std::string, Material*> m_materials;
 	std::map<std::string, ID3D11ShaderResourceView*> m_SRVs;
 	std::map<std::string, ID3D11SamplerState*> m_samplerStates;
+	std::map<std::string, DirectX::SpriteBatch*> m_spriteBatches;
 	std::queue<Entity*> m_spawnQueue;
 	std::queue<Entity*> m_destroyQueue;
 	LightComponent::Light m_lights[MAX_LIGHTS];
@@ -135,6 +137,14 @@ public:
 	// --------------------------------------------------------
 	ID3D11SamplerState* CreateSamplerState(const std::string& name, D3D11_SAMPLER_DESC* description, ID3D11Device* device);
 	ID3D11SamplerState* GetSamplerState(const std::string& name);
+
+	// --------------------------------------------------------
+	// Create a SpriteBatch and store it in the internal map
+	// --------------------------------------------------------
+	DirectX::SpriteBatch* CreateSpriteBatch(const std::string& name, ID3D11DeviceContext* context);
+	DirectX::SpriteBatch* GetSpriteBatch(const std::string& name);
+
+
 	// Lifecycle methods for Entities
 	void OnMouseDown(WPARAM buttonState, int x, int y);
 	void OnMouseUp(WPARAM buttonState, int x, int y);
@@ -148,7 +158,7 @@ public:
 	// --------------------------------------------------------
 	// Draws all entities using the device context
 	// --------------------------------------------------------
-	void DrawEntities(ID3D11DeviceContext* context);
+	void DrawEntities(ID3D11DeviceContext* context, DirectX::SpriteBatch* spriteBatch, int screenWidth, int screenHeight);
 
 	~World();
 };
