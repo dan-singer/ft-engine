@@ -179,6 +179,7 @@
     <ClCompile Include="Rotator.cpp" />
     <ClCompile Include="SimpleShader.cpp" />
     <ClCompile Include="Transform.cpp" />
+    <ClCompile Include="UITextComponent.cpp" />
     <ClCompile Include="UITransform.cpp" />
     <ClCompile Include="World.cpp" />
   </ItemGroup>
@@ -199,6 +200,7 @@
     <ClInclude Include="Rotator.h" />
     <ClInclude Include="SimpleShader.h" />
     <ClInclude Include="Transform.h" />
+    <ClInclude Include="UITextComponent.h" />
     <ClInclude Include="UITransform.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="World.h" />

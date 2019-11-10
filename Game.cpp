@@ -9,6 +9,8 @@
 #include "Rotator.h"
 #include "RigidBodyComponent.h"
 #include "CollisionTester.h"
+#include <SpriteFont.h>
+#include "UITextComponent.h"
 
 // For the DirectX Math library
 using namespace DirectX;
@@ -95,7 +97,9 @@ void Game::LoadResources()
 	world->CreateMaterial("leather", vs, ps, world->GetTexture("leather"), world->GetTexture("velvet_normal"), world->GetSamplerState("main"));
 	world->CreateMaterial("metal", vs, ps, world->GetTexture("metal"), world->GetTexture("velvet_normal"), world->GetSamplerState("main"));
 
+	// UI
 	world->CreateSpriteBatch("main", context);
+	world->CreateFont("Open Sans", device, L"Assets/Fonts/open-sans.spritefont");
 }
 
 
@@ -152,9 +156,13 @@ void Game::CreateEntities()
 	spotLight->GetTransform()->SetRotation(spotLightRot);
 
 	Entity* sprite = world->Instantiate("sprite");
-	sprite->AddComponent<UITransform>()->Init(Anchor::CENTER_CENTER, 0, XMFLOAT2(0.5f, 0.5f), XMFLOAT2(100, 100));
-	sprite->GetTransform()->SetPosition(XMFLOAT3(0, 0, 0));
+	sprite->AddComponent<UITransform>()->Init(Anchor::BOTTOM_RIGHT, 0, XMFLOAT2(1, 1), XMFLOAT2(.25f,.25f), XMFLOAT2(0, 0));
 	sprite->AddComponent<MaterialComponent>()->m_material = world->GetMaterial("leather");
+
+	Entity* text = world->Instantiate("text");
+	text->AddComponent<UITransform>()->Init(Anchor::CENTER_CENTER, 0, XMFLOAT2(.5f, .5f), XMFLOAT2(1, 1), XMFLOAT2(0, 0));
+	text->AddComponent<UITextComponent>()->Init("Hello World", world->GetFont("Open Sans"), Colors::White);
+
 	
 }
 

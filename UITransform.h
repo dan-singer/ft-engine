@@ -26,11 +26,16 @@ public:
 	Anchor m_anchor = Anchor::TOP_LEFT;
 	float m_rotation = 0.0f;
 	DirectX::XMFLOAT2 m_normalizedOrigin = DirectX::XMFLOAT2(0, 0);
-	DirectX::XMFLOAT2 m_dimensions = DirectX::XMFLOAT2(0, 0);
 
 	UITransform(Entity* entity) : Component(entity) { }
 
-	void Init(Anchor anchor, float rotation, DirectX::XMFLOAT2 normalizedOrigin, DirectX::XMFLOAT2 dimensions);
+	// --------------------------------------------------------
+	// Helper method to set common UITransform fields in one method call
+	// @param DirectX::XMFLOAT2 normalizedOrigin Origin with coordinates relative to width and height of texture in [0, 1] range
+	// --------------------------------------------------------
+	void Init(Anchor anchor, float rotation, DirectX::XMFLOAT2 normalizedOrigin, DirectX::XMFLOAT2 scale, DirectX::XMFLOAT2 position);
+
+	DirectX::XMFLOAT2 GetAnchorOrigin(int screenWidth, int screenHeight);
 
 	virtual void Start() override;
 	virtual void Tick(float deltaTime) override;

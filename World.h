@@ -13,6 +13,7 @@
 #include <set>
 #include <queue>
 #include <SpriteBatch.h>
+#include <SpriteFont.h>
 class CameraComponent;
 class Entity;
 
@@ -33,6 +34,7 @@ private:
 	std::map<std::string, ID3D11ShaderResourceView*> m_SRVs;
 	std::map<std::string, ID3D11SamplerState*> m_samplerStates;
 	std::map<std::string, DirectX::SpriteBatch*> m_spriteBatches;
+	std::map<std::string, DirectX::SpriteFont*> m_fonts;
 	std::queue<Entity*> m_spawnQueue;
 	std::queue<Entity*> m_destroyQueue;
 	LightComponent::Light m_lights[MAX_LIGHTS];
@@ -143,6 +145,13 @@ public:
 	// --------------------------------------------------------
 	DirectX::SpriteBatch* CreateSpriteBatch(const std::string& name, ID3D11DeviceContext* context);
 	DirectX::SpriteBatch* GetSpriteBatch(const std::string& name);
+
+
+	// --------------------------------------------------------
+	// Create a SpriteFont and store it in the internal map
+	// --------------------------------------------------------
+	DirectX::SpriteFont* CreateFont(const std::string& name, ID3D11Device* device, const wchar_t* path);
+	DirectX::SpriteFont* GetFont(const std::string& name);
 
 
 	// Lifecycle methods for Entities

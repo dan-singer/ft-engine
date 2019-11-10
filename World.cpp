@@ -6,6 +6,7 @@
 #include <iostream>
 #include <WICTextureLoader.h>
 #include "RigidBodyComponent.h"
+#include "UITextComponent.h"
 
 using namespace DirectX;
 
@@ -231,6 +232,18 @@ DirectX::SpriteBatch* World::GetSpriteBatch(const std::string& name)
 	return m_spriteBatches[name];
 }
 
+DirectX::SpriteFont* World::CreateFont(const std::string& name, ID3D11Device* device, const wchar_t* path)
+{
+	SpriteFont* font = new SpriteFont(device, path);
+	m_fonts[name] = font;
+	return font;
+}
+
+DirectX::SpriteFont* World::GetFont(const std::string& name)
+{
+	return m_fonts[name];
+}
+
 void World::OnMouseDown(WPARAM buttonState, int x, int y)
 {
 	for (Entity* entity : m_entities) {
@@ -406,88 +419,53 @@ void World::DrawEntities(ID3D11DeviceContext* context, DirectX::SpriteBatch* spr
 
 		// Render UI Elements
 		if (entity->GetUITransform()) {
+			Transform* transform = entity->GetTransform();
+			DirectX::XMFLOAT3 pos = transform->GetPosition();
+			UITransform* uiTransform = entity->GetUITransform();
+
+			XMFLOAT2 anchorOrigin = uiTransform->GetAnchorOrigin(screenWidth, screenHeight);
+			XMFLOAT2 finalPosition = XMFLOAT2(anchorOrigin.x + pos.x, anchorOrigin.y + pos.y);
+
+			XMFLOAT3 scale3 = transform->GetScale();
+			XMFLOAT2 scale2(scale3.x, scale3.y);
+
 			Material* mat = entity->GetMaterial();
 			if (mat) {
+
 				ID3D11ShaderResourceView* srv = mat->GetDiffuse();
-				Transform* transform = entity->GetTransform();
-				UITransform* uiTransform = entity->GetUITransform();
-				DirectX::XMFLOAT3 pos = transform->GetPosition();
 
-				XMFLOAT2 anchorOrigin;
-				switch (uiTransform->m_anchor)	
-				{
-				case Anchor::TOP_LEFT:
-				{
-					anchorOrigin.x = 0;
-					anchorOrigin.y = 0;
-					break;
-				}
-				case Anchor::TOP_CENTER:
-				{
-					anchorOrigin.x = screenWidth / 2;
-					anchorOrigin.y = 0;
-					break;
-				}
-				case Anchor::TOP_RIGHT:
-				{
-					anchorOrigin.x = screenWidth;
-					anchorOrigin.y = 0;
-					break;
-				}
-				case Anchor::CENTER_LEFT:
-				{
-					anchorOrigin.x = 0;
-					anchorOrigin.y = screenHeight / 2;
-					break;
-				}
-				case Anchor::CENTER_CENTER:
-				{
-					anchorOrigin.x = screenWidth / 2;
-					anchorOrigin.y = screenHeight / 2;
-					break;
-				}
-				case Anchor::CENTER_RIGHT:
-				{
-					anchorOrigin.x = screenWidth;
-					anchorOrigin.y = screenHeight / 2;
-					break;
-				}
-				case Anchor::BOTTOM_LEFT:
-				{
-					anchorOrigin.x = 0;
-					anchorOrigin.y = screenHeight;
-					break;
-				}
-				case Anchor::BOTTOM_CENTER:
-				{
-					anchorOrigin.x = screenWidth / 2;
-					anchorOrigin.y = screenHeight;
-					break;
-				}
-				case Anchor::BOTTOM_RIGHT:
-				{
-					anchorOrigin.x = screenWidth;
-					anchorOrigin.y = screenHeight;
-					break;
-				}
-				}
-				XMFLOAT2 finalPosition = XMFLOAT2(anchorOrigin.x + pos.x, anchorOrigin.y + pos.y);
-				RECT dest;
-				dest.left = finalPosition.x;
-				dest.right = dest.left + uiTransform->m_dimensions.x;
-				dest.top = finalPosition.y;
-				dest.bottom = dest.top + uiTransform->m_dimensions.y;
+				ID3D11Resource* resource;
+				srv->GetResource(&resource);
 
-				XMFLOAT2 origin = XMFLOAT2(uiTransform->m_normalizedOrigin.x * uiTransform->m_dimensions.x,
-					uiTransform->m_normalizedOrigin.y * uiTransform->m_dimensions.y);
+				CD3D11_TEXTURE2D_DESC texDesc;
+				ID3D11Texture2D* tex = static_cast<ID3D11Texture2D*>(resource);
+				tex->GetDesc(&texDesc);
+
+				tex->Release();
+
+				XMFLOAT2 origin = XMFLOAT2(uiTransform->m_normalizedOrigin.x * texDesc.Width,
+					uiTransform->m_normalizedOrigin.y * texDesc.Height);
 
 				spriteBatch->Begin();
-				// TODO determine why origin is not working
-				spriteBatch->Draw(srv, dest, nullptr, Colors::White, uiTransform->m_rotation, origin);
+				spriteBatch->Draw(srv, finalPosition, nullptr, Colors::White, uiTransform->m_rotation, origin, scale2);
 				spriteBatch->End();
-
 			}
-
+			UITextComponent* uiText = entity->GetComponent<UITextComponent>();
+			if (uiText) {
+				XMVECTOR dimensions = uiText->m_font->MeasureString(uiText->m_text.c_str());
+				XMFLOAT2 dimensionsData;
+				XMStoreFloat2(&dimensionsData, dimensions);
+				XMFLOAT2 origin = XMFLOAT2(
+					uiTransform->m_normalizedOrigin.x * dimensionsData.x, 
+					uiTransform->m_normalizedOrigin.y * dimensionsData.y
+				);
+				spriteBatch->Begin();
+				uiText->m_font->DrawString(
+					spriteBatch, uiText->m_text.c_str(), finalPosition, 
+					Colors::White, uiTransform->m_rotation, origin, scale2
+				);
+				spriteBatch->End();
+			}
 		}
 		// Render traditional 3D entities
 		else if (entity->GetMesh() && entity->GetMaterial()) {
@@ -538,6 +516,9 @@ World::~World()
 		delete pair.second;
 	}
 	for (const auto& pair : m_materials) {
+		delete pair.second;
+	}
+	for (const auto& pair : m_fonts) {
 		delete pair.second;
 	}
 	for (const auto& pair : m_SRVs) {
