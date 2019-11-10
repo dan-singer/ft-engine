@@ -14,6 +14,16 @@ void UITransform::Init(Anchor anchor, float rotation, DirectX::XMFLOAT2 normaliz
 	transform->SetPosition(XMFLOAT3(position.x, position.y, 0));
 }
 
+void UITransform::StoreBounds(RECT newBounds)
+{
+	m_bounds = newBounds;
+}
+
+RECT UITransform::GetBounds()
+{
+	return m_bounds;
+}
+
 DirectX::XMFLOAT2 UITransform::GetAnchorOrigin(int screenWidth, int screenHeight)
 {
 	XMFLOAT2 anchorOrigin;

@@ -11,6 +11,7 @@
 #include "CollisionTester.h"
 #include <SpriteFont.h>
 #include "UITextComponent.h"
+#include "ButtonComponent.h"
 
 // For the DirectX Math library
 using namespace DirectX;
@@ -158,11 +159,28 @@ void Game::CreateEntities()
 	Entity* sprite = world->Instantiate("sprite");
 	sprite->AddComponent<UITransform>()->Init(Anchor::BOTTOM_RIGHT, 0, XMFLOAT2(1, 1), XMFLOAT2(.25f,.25f), XMFLOAT2(0, 0));
 	sprite->AddComponent<MaterialComponent>()->m_material = world->GetMaterial("leather");
+	ButtonComponent* spriteButton = sprite->AddComponent<ButtonComponent>();
+	spriteButton->AddOnEnter([]() 
+		{
+			printf("Entered\n");
+		}
+	);
+	spriteButton->AddOnExit([]()
+		{
+			printf("Exited\n");
+		}
+	);
 
 	Entity* text = world->Instantiate("text");
 	text->AddComponent<UITransform>()->Init(Anchor::CENTER_CENTER, 0, XMFLOAT2(.5f, .5f), XMFLOAT2(1, 1), XMFLOAT2(0, 0));
 	text->AddComponent<UITextComponent>()->Init("Hello World", world->GetFont("Open Sans"), Colors::White);
-
+	ButtonComponent* button = text->AddComponent<ButtonComponent>();
+	button->AddOnClick([]() 
+		{
+			Entity* text = World::GetInstance()->Find("text");
+			text->GetComponent<UITextComponent>()->m_color = Colors::Black;
+		}
+	);
 	
 }
 

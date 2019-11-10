@@ -18,10 +18,11 @@ enum class Anchor {
 // UITransform contains transformation data for rendering 
 // 2D UI elements on the screen using SpriteBatch
 // Use the regular Transform component to set position and scale
-// Make sure to set m_screenDimensions before using this
 // --------------------------------------------------------
 class UITransform : public Component
 {
+private:
+	RECT m_bounds;
 public:
 	Anchor m_anchor = Anchor::TOP_LEFT;
 	float m_rotation = 0.0f;
@@ -34,6 +35,14 @@ public:
 	// @param DirectX::XMFLOAT2 normalizedOrigin Origin with coordinates relative to width and height of texture in [0, 1] range
 	// --------------------------------------------------------
 	void Init(Anchor anchor, float rotation, DirectX::XMFLOAT2 normalizedOrigin, DirectX::XMFLOAT2 scale, DirectX::XMFLOAT2 position);
+
+
+	// --------------------------------------------------------
+	// Caches the bounds. This has no effect on rendering.
+	// --------------------------------------------------------
+	void StoreBounds(RECT newBounds);
+
+	RECT GetBounds();
 
 	DirectX::XMFLOAT2 GetAnchorOrigin(int screenWidth, int screenHeight);
 

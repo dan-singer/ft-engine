@@ -446,6 +446,13 @@ void World::DrawEntities(ID3D11DeviceContext* context, DirectX::SpriteBatch* spr
 				XMFLOAT2 origin = XMFLOAT2(uiTransform->m_normalizedOrigin.x * texDesc.Width,
 					uiTransform->m_normalizedOrigin.y * texDesc.Height);
 
+				RECT bounds;
+				bounds.left = finalPosition.x - (origin.x * scale2.x);
+				bounds.right = bounds.left + (texDesc.Width * scale2.x);
+				bounds.top = finalPosition.y - (origin.y * scale2.y);
+				bounds.bottom = bounds.top + (texDesc.Height * scale2.y);
+				uiTransform->StoreBounds(bounds);
+
 				spriteBatch->Begin();
 				spriteBatch->Draw(srv, finalPosition, nullptr, Colors::White, uiTransform->m_rotation, origin, scale2);
 				spriteBatch->End();
@@ -459,10 +466,18 @@ void World::DrawEntities(ID3D11DeviceContext* context, DirectX::SpriteBatch* spr
 					uiTransform->m_normalizedOrigin.x * dimensionsData.x, 
 					uiTransform->m_normalizedOrigin.y * dimensionsData.y
 				);
+
+				RECT bounds;
+				bounds.left = finalPosition.x - (origin.x * scale2.x);
+				bounds.right = bounds.left + (dimensionsData.x * scale2.x);
+				bounds.top = finalPosition.y - (origin.y * scale2.y);
+				bounds.bottom = bounds.top + (dimensionsData.y * scale2.y);
+				uiTransform->StoreBounds(bounds);
+
 				spriteBatch->Begin();
 				uiText->m_font->DrawString(
 					spriteBatch, uiText->m_text.c_str(), finalPosition, 
-					Colors::White, uiTransform->m_rotation, origin, scale2
+					uiText->m_color, uiTransform->m_rotation, origin, scale2
 				);
 				spriteBatch->End();
 			}
