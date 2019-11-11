@@ -9,6 +9,9 @@
 #include "Rotator.h"
 #include "RigidBodyComponent.h"
 #include "CollisionTester.h"
+#include <SpriteFont.h>
+#include "UITextComponent.h"
+#include "ButtonComponent.h"
 
 // For the DirectX Math library
 using namespace DirectX;
@@ -82,6 +85,7 @@ void Game::LoadResources()
 	world->CreateTexture("metal", device, context, L"Assets/Textures/BareMetal.png");
 	world->CreateTexture("velvet_normal", device, context, L"Assets/Textures/Velvet_N.jpg");
 
+
 	// Create the sampler state
 	D3D11_SAMPLER_DESC samplerDesc = {};
 	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -93,6 +97,10 @@ void Game::LoadResources()
 
 	world->CreateMaterial("leather", vs, ps, world->GetTexture("leather"), world->GetTexture("velvet_normal"), world->GetSamplerState("main"));
 	world->CreateMaterial("metal", vs, ps, world->GetTexture("metal"), world->GetTexture("velvet_normal"), world->GetSamplerState("main"));
+
+	// UI
+	world->CreateSpriteBatch("main", context);
+	world->CreateFont("Open Sans", device, L"Assets/Fonts/open-sans.spritefont");
 }
 
 
@@ -147,6 +155,33 @@ void Game::CreateEntities()
 	XMFLOAT4 spotLightRot;
 	XMStoreFloat4(&spotLightRot, XMQuaternionRotationRollPitchYaw(0, 90.0f, 0));
 	spotLight->GetTransform()->SetRotation(spotLightRot);
+
+	Entity* sprite = world->Instantiate("sprite");
+	sprite->AddComponent<UITransform>()->Init(Anchor::BOTTOM_RIGHT, 0, XMFLOAT2(1, 1), XMFLOAT2(.25f,.25f), XMFLOAT2(0, 0));
+	sprite->AddComponent<MaterialComponent>()->m_material = world->GetMaterial("leather");
+	ButtonComponent* spriteButton = sprite->AddComponent<ButtonComponent>();
+	spriteButton->AddOnEnter([]() 
+		{
+			printf("Entered\n");
+		}
+	);
+	spriteButton->AddOnExit([]()
+		{
+			printf("Exited\n");
+		}
+	);
+
+	Entity* text = world->Instantiate("text");
+	text->AddComponent<UITransform>()->Init(Anchor::CENTER_CENTER, 0, XMFLOAT2(.5f, .5f), XMFLOAT2(1, 1), XMFLOAT2(0, 0));
+	text->AddComponent<UITextComponent>()->Init("Hello World", world->GetFont("Open Sans"), Colors::White);
+	ButtonComponent* button = text->AddComponent<ButtonComponent>();
+	button->AddOnClick([]() 
+		{
+			Entity* text = World::GetInstance()->Find("text");
+			text->GetComponent<UITextComponent>()->m_color = Colors::Black;
+		}
+	);
+	
 }
 
 // --------------------------------------------------------
@@ -190,9 +225,10 @@ void Game::Draw(float deltaTime, float totalTime)
 		1.0f,
 		0);
 
-
+	
 	// Draw each entity
-	World::GetInstance()->DrawEntities(context);
+	SpriteBatch* mainSpriteBatch = World::GetInstance()->GetSpriteBatch("main");
+	World::GetInstance()->DrawEntities(context, mainSpriteBatch, width, height);
 
 	// Present the back buffer to the user
 	//  - Puts the final frame we're drawing into the window so the user can see it
@@ -202,6 +238,8 @@ void Game::Draw(float deltaTime, float totalTime)
 	// Due to the usage of a more sophisticated swap chain effect,
 	// the render target must be re-bound after every call to Present()
 	context->OMSetRenderTargets(1, &backBufferRTV, depthStencilView);
+
+
 }
 
 

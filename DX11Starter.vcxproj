@@ -162,6 +162,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ButtonComponent.cpp" />
     <ClCompile Include="CameraComponent.cpp" />
     <ClCompile Include="CollisionTester.cpp" />
     <ClCompile Include="Component.cpp" />
@@ -179,9 +180,12 @@
     <ClCompile Include="Rotator.cpp" />
     <ClCompile Include="SimpleShader.cpp" />
     <ClCompile Include="Transform.cpp" />
+    <ClCompile Include="UITextComponent.cpp" />
+    <ClCompile Include="UITransform.cpp" />
     <ClCompile Include="World.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ButtonComponent.h" />
     <ClInclude Include="CameraComponent.h" />
     <ClInclude Include="CollisionTester.h" />
     <ClInclude Include="Component.h" />
@@ -198,6 +202,8 @@
     <ClInclude Include="Rotator.h" />
     <ClInclude Include="SimpleShader.h" />
     <ClInclude Include="Transform.h" />
+    <ClInclude Include="UITextComponent.h" />
+    <ClInclude Include="UITransform.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="World.h" />
   </ItemGroup>

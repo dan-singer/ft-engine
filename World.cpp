@@ -6,6 +6,9 @@
 #include <iostream>
 #include <WICTextureLoader.h>
 #include "RigidBodyComponent.h"
+#include "UITextComponent.h"
+
+using namespace DirectX;
 
 World::World()
 {
@@ -196,7 +199,7 @@ Material* World::GetMaterial(const std::string& name)
 ID3D11ShaderResourceView* World::CreateTexture(const std::string& name, ID3D11Device* device, ID3D11DeviceContext* context, const wchar_t* fileName)
 {
 	m_SRVs[name] = nullptr;
-	DirectX::CreateWICTextureFromFile(device, context, fileName, 0, &m_SRVs[name]);
+	CreateWICTextureFromFile(device, context, fileName, 0, &m_SRVs[name]);
 	return m_SRVs[name];
 }
 
@@ -215,6 +218,30 @@ ID3D11SamplerState* World::CreateSamplerState(const std::string& name, D3D11_SAM
 ID3D11SamplerState* World::GetSamplerState(const std::string& name)
 {
 	return m_samplerStates[name];
+}
+
+DirectX::SpriteBatch* World::CreateSpriteBatch(const std::string& name, ID3D11DeviceContext* context)
+{
+	SpriteBatch* spriteBatch = new DirectX::SpriteBatch(context);
+	m_spriteBatches[name] = spriteBatch;
+	return spriteBatch;
+}
+
+DirectX::SpriteBatch* World::GetSpriteBatch(const std::string& name)
+{
+	return m_spriteBatches[name];
+}
+
+DirectX::SpriteFont* World::CreateFont(const std::string& name, ID3D11Device* device, const wchar_t* path)
+{
+	SpriteFont* font = new SpriteFont(device, path);
+	m_fonts[name] = font;
+	return font;
+}
+
+DirectX::SpriteFont* World::GetFont(const std::string& name)
+{
+	return m_fonts[name];
 }
 
 void World::OnMouseDown(WPARAM buttonState, int x, int y)
@@ -374,7 +401,7 @@ void World::Tick(float deltaTime)
 	Flush();
 }
 
-void World::DrawEntities(ID3D11DeviceContext* context)
+void World::DrawEntities(ID3D11DeviceContext* context, DirectX::SpriteBatch* spriteBatch, int screenWidth, int screenHeight)
 {
 	if (!m_mainCamera) {
 		return;
@@ -389,7 +416,74 @@ void World::DrawEntities(ID3D11DeviceContext* context)
 	UINT offset = 0;
 	for (Entity* entity : m_entities) {
 		entity->GetTransform()->RecalculateWorldMatrix();
-		if (entity->GetMesh() && entity->GetMaterial()) {
+
+		// Render UI Elements
+		if (entity->GetUITransform()) {
+			Transform* transform = entity->GetTransform();
+			DirectX::XMFLOAT3 pos = transform->GetPosition();
+			UITransform* uiTransform = entity->GetUITransform();
+
+			XMFLOAT2 anchorOrigin = uiTransform->GetAnchorOrigin(screenWidth, screenHeight);
+			XMFLOAT2 finalPosition = XMFLOAT2(anchorOrigin.x + pos.x, anchorOrigin.y + pos.y);
+
+			XMFLOAT3 scale3 = transform->GetScale();
+			XMFLOAT2 scale2(scale3.x, scale3.y);
+
+			Material* mat = entity->GetMaterial();
+			if (mat) {
+
+				ID3D11ShaderResourceView* srv = mat->GetDiffuse();
+
+				ID3D11Resource* resource;
+				srv->GetResource(&resource);
+
+				CD3D11_TEXTURE2D_DESC texDesc;
+				ID3D11Texture2D* tex = static_cast<ID3D11Texture2D*>(resource);
+				tex->GetDesc(&texDesc);
+
+				tex->Release();
+
+				XMFLOAT2 origin = XMFLOAT2(uiTransform->m_normalizedOrigin.x * texDesc.Width,
+					uiTransform->m_normalizedOrigin.y * texDesc.Height);
+
+				RECT bounds;
+				bounds.left = finalPosition.x - (origin.x * scale2.x);
+				bounds.right = bounds.left + (texDesc.Width * scale2.x);
+				bounds.top = finalPosition.y - (origin.y * scale2.y);
+				bounds.bottom = bounds.top + (texDesc.Height * scale2.y);
+				uiTransform->StoreBounds(bounds);
+
+				spriteBatch->Begin();
+				spriteBatch->Draw(srv, finalPosition, nullptr, Colors::White, uiTransform->m_rotation, origin, scale2);
+				spriteBatch->End();
+			}
+			UITextComponent* uiText = entity->GetComponent<UITextComponent>();
+			if (uiText) {
+				XMVECTOR dimensions = uiText->m_font->MeasureString(uiText->m_text.c_str());
+				XMFLOAT2 dimensionsData;
+				XMStoreFloat2(&dimensionsData, dimensions);
+				XMFLOAT2 origin = XMFLOAT2(
+					uiTransform->m_normalizedOrigin.x * dimensionsData.x, 
+					uiTransform->m_normalizedOrigin.y * dimensionsData.y
+				);
+
+				RECT bounds;
+				bounds.left = finalPosition.x - (origin.x * scale2.x);
+				bounds.right = bounds.left + (dimensionsData.x * scale2.x);
+				bounds.top = finalPosition.y - (origin.y * scale2.y);
+				bounds.bottom = bounds.top + (dimensionsData.y * scale2.y);
+				uiTransform->StoreBounds(bounds);
+
+				spriteBatch->Begin();
+				uiText->m_font->DrawString(
+					spriteBatch, uiText->m_text.c_str(), finalPosition, 
+					uiText->m_color, uiTransform->m_rotation, origin, scale2
+				);
+				spriteBatch->End();
+			}
+		}
+		// Render traditional 3D entities
+		else if (entity->GetMesh() && entity->GetMaterial()) {
 			entity->PrepareMaterial(
 				m_mainCamera->GetViewMatrix(), m_mainCamera->GetProjectionMatrix(),
 				m_mainCamera->GetOwner()->GetTransform()->GetPosition(),
@@ -400,6 +494,7 @@ void World::DrawEntities(ID3D11DeviceContext* context)
 			context->DrawIndexed(entity->GetMesh()->GetIndexCount(), 0, 0);
 		}
 	}
+
 }
 
 World::~World()
@@ -438,13 +533,18 @@ World::~World()
 	for (const auto& pair : m_materials) {
 		delete pair.second;
 	}
+	for (const auto& pair : m_fonts) {
+		delete pair.second;
+	}
 	for (const auto& pair : m_SRVs) {
 		pair.second->Release();
 	}
 	for (const auto& pair : m_samplerStates) {
 		pair.second->Release();
 	}
-
+	for (const auto& pair : m_spriteBatches) {
+		delete pair.second;
+	}
 
 }
 

@@ -11,7 +11,7 @@
 #include "LightComponent.h"
 #include "World.h"
 #include "RigidBodyComponent.h"
-
+#include "UITransform.h"
 
 // --------------------------------------------------------
 // Base Entity class which contains a list of Components.
@@ -30,7 +30,7 @@ protected:
 	MeshComponent* m_meshComponent = nullptr;
 	MaterialComponent* m_materialComponent = nullptr;
 	RigidBodyComponent* m_rigidBodyComponent = nullptr;
-
+	UITransform* m_uiTransform = nullptr;
 	// Use the World to instantiate an Entity
 	Entity(const std::string& name);
 public:
@@ -65,7 +65,10 @@ public:
 			m_components[0] = newComponent;
 			m_components[m_components.size() - 1] = temp;
 		}
-
+		UITransform* castedUITransform = dynamic_cast<UITransform*>(newComponent);
+		if (castedUITransform) {
+			m_uiTransform = castedUITransform;
+		}
 
 		return newComponent;
 	}
@@ -115,6 +118,8 @@ public:
 	Transform* GetTransform() { return m_transform; }
 
 	RigidBodyComponent* GetRigidBody() { return m_rigidBodyComponent; }
+
+	UITransform* GetUITransform() { return m_uiTransform; }
 
 	// --------------------------------------------------------
 	// Returns the mesh component attached to this Entity.
