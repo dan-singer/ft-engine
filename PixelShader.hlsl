@@ -35,25 +35,76 @@ cbuffer externalData : register(b0)
     float3 cameraPos;
 	int lightCount;
 	float shininess;
+	float metalness;
+	float roughness;
+	float3 specColor;
 };
 
 Texture2D diffuseTexture : register(t0);
 Texture2D normalTexture : register(t1);
 SamplerState samplerState : register(s0);
+static const float PI = 3.14159265f;
+
+//MicrofacetBRDF
+float SpecDistribution(float3 n, float3 h)
+{
+	//Pre-Calculations
+	float NdotH = saturate(dot(n, h));
+	float NdotH2 = NdotH * NdotH;
+	float a = roughness * roughness;
+	float a2 = max(a * a, 0);
+
+
+	float denomToSquare = NdotH2 * (a2 - 1) + 1;
+
+	return a2 / (PI * denomToSquare * denomToSquare);
+}
+
+float3 Fresnel(float3 v, float3 h, float3 f0)
+{
+	float VdotH = saturate(dot(v, h));
+
+	return f0 + (1 - f0) * pow(1 - VdotH, 5);
+}
+
+float GeometricShadowing(float3 n, float3 v, float3 h)
+{
+	float k = pow(roughness + 1, 2) / 8.0f;
+	float NdotV = saturate(dot(n, v));
+
+	return NdotV / (NdotV * (1 - k) + k);
+}
+
+
+float3 microFacet(float D, float3 F, float G, float NdotL, float NdotV)
+{
+	return (D * F * G / (4 * max(NdotV, NdotL)));
+}
+
+float3 DiffuseEnergyConserve(float diffuse, float3 specular)
+{
+	return diffuse * ((1 - normalize(specular)) * (1 - metalness));
+}
 
 float4 directionalLight(int index, float4 surfaceColor, float3 normal, float3 toCamera) 
 {
 	// Diffuse
 	float3 toLight = normalize(-lights[index].direction);
 	float NdotL = saturate(dot(toLight, normal)) * lights[index].intensity;
+	float NdotV = saturate(dot(toCamera, normal));
 	float4 diffuse = surfaceColor * float4(lights[index].color, 1) * NdotL;
 
 	// Specular
-	float3 h = normalize(toLight + toCamera);
-	float NdotH = saturate(dot(normal, h));
-	float specAmt = shininess > 0 ? pow(NdotH, shininess) : 0;
+	float3 h = saturate((toLight + toCamera) / 2);
+	
+	float D = SpecDistribution(normal, h);
+	float3 F = Fresnel(toCamera, h, specColor);
+	float G = GeometricShadowing(normal, toCamera, h) * GeometricShadowing(normal, toLight, h);
 
-	return diffuse + specAmt;
+	float3 specular = microFacet(D, F, G, NdotL, NdotV);
+	float3 conservedEnergy = DiffuseEnergyConserve(diffuse, specular);
+
+	return float4(conservedEnergy, 1);
 }
 
 float4 pointLight(int index, float4 surfaceColor, float3 normal, float3 toCamera, float3 worldPos)
