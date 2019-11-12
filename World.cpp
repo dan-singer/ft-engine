@@ -409,6 +409,8 @@ void World::DrawEntities(ID3D11DeviceContext* context, DirectX::SpriteBatch* spr
 
 	RebuildLights();
 
+	std::queue<Entity*> uiEntities;
+
 	// Set buffers in the input assembler
 	//  - Do this ONCE PER OBJECT you're drawing, since each object might
 	//    have different geometry.
@@ -417,70 +419,9 @@ void World::DrawEntities(ID3D11DeviceContext* context, DirectX::SpriteBatch* spr
 	for (Entity* entity : m_entities) {
 		entity->GetTransform()->RecalculateWorldMatrix();
 
-		// Render UI Elements
+		// Delay rendering UI elements so they can be batched together
 		if (entity->GetUITransform()) {
-			Transform* transform = entity->GetTransform();
-			DirectX::XMFLOAT3 pos = transform->GetPosition();
-			UITransform* uiTransform = entity->GetUITransform();
-
-			XMFLOAT2 anchorOrigin = uiTransform->GetAnchorOrigin(screenWidth, screenHeight);
-			XMFLOAT2 finalPosition = XMFLOAT2(anchorOrigin.x + pos.x, anchorOrigin.y + pos.y);
-
-			XMFLOAT3 scale3 = transform->GetScale();
-			XMFLOAT2 scale2(scale3.x, scale3.y);
-
-			Material* mat = entity->GetMaterial();
-			if (mat) {
-
-				ID3D11ShaderResourceView* srv = mat->GetDiffuse();
-
-				ID3D11Resource* resource;
-				srv->GetResource(&resource);
-
-				CD3D11_TEXTURE2D_DESC texDesc;
-				ID3D11Texture2D* tex = static_cast<ID3D11Texture2D*>(resource);
-				tex->GetDesc(&texDesc);
-
-				tex->Release();
-
-				XMFLOAT2 origin = XMFLOAT2(uiTransform->m_normalizedOrigin.x * texDesc.Width,
-					uiTransform->m_normalizedOrigin.y * texDesc.Height);
-
-				RECT bounds;
-				bounds.left = finalPosition.x - (origin.x * scale2.x);
-				bounds.right = bounds.left + (texDesc.Width * scale2.x);
-				bounds.top = finalPosition.y - (origin.y * scale2.y);
-				bounds.bottom = bounds.top + (texDesc.Height * scale2.y);
-				uiTransform->StoreBounds(bounds);
-
-				spriteBatch->Begin();
-				spriteBatch->Draw(srv, finalPosition, nullptr, Colors::White, uiTransform->m_rotation, origin, scale2);
-				spriteBatch->End();
-			}
-			UITextComponent* uiText = entity->GetComponent<UITextComponent>();
-			if (uiText) {
-				XMVECTOR dimensions = uiText->m_font->MeasureString(uiText->m_text.c_str());
-				XMFLOAT2 dimensionsData;
-				XMStoreFloat2(&dimensionsData, dimensions);
-				XMFLOAT2 origin = XMFLOAT2(
-					uiTransform->m_normalizedOrigin.x * dimensionsData.x, 
-					uiTransform->m_normalizedOrigin.y * dimensionsData.y
-				);
-
-				RECT bounds;
-				bounds.left = finalPosition.x - (origin.x * scale2.x);
-				bounds.right = bounds.left + (dimensionsData.x * scale2.x);
-				bounds.top = finalPosition.y - (origin.y * scale2.y);
-				bounds.bottom = bounds.top + (dimensionsData.y * scale2.y);
-				uiTransform->StoreBounds(bounds);
-
-				spriteBatch->Begin();
-				uiText->m_font->DrawString(
-					spriteBatch, uiText->m_text.c_str(), finalPosition, 
-					uiText->m_color, uiTransform->m_rotation, origin, scale2
-				);
-				spriteBatch->End();
-			}
+			uiEntities.push(entity);
 		}
 		// Render traditional 3D entities
 		else if (entity->GetMesh() && entity->GetMaterial()) {
@@ -494,6 +435,77 @@ void World::DrawEntities(ID3D11DeviceContext* context, DirectX::SpriteBatch* spr
 			context->DrawIndexed(entity->GetMesh()->GetIndexCount(), 0, 0);
 		}
 	}
+
+	spriteBatch->Begin();
+	while (!uiEntities.empty()) {
+		Entity* entity = uiEntities.front();
+		uiEntities.pop();
+
+		Transform* transform = entity->GetTransform();
+		DirectX::XMFLOAT3 pos = transform->GetPosition();
+		UITransform* uiTransform = entity->GetUITransform();
+
+		XMFLOAT2 anchorOrigin = uiTransform->GetAnchorOrigin(screenWidth, screenHeight);
+		XMFLOAT2 finalPosition = XMFLOAT2(anchorOrigin.x + pos.x, anchorOrigin.y + pos.y);
+
+		XMFLOAT3 scale3 = transform->GetScale();
+		XMFLOAT2 scale2(scale3.x, scale3.y);
+
+		Material* mat = entity->GetMaterial();
+		if (mat) {
+
+			ID3D11ShaderResourceView* srv = mat->GetDiffuse();
+
+			ID3D11Resource* resource;
+			srv->GetResource(&resource);
+
+			CD3D11_TEXTURE2D_DESC texDesc;
+			ID3D11Texture2D* tex = static_cast<ID3D11Texture2D*>(resource);
+			tex->GetDesc(&texDesc);
+
+			tex->Release();
+
+			XMFLOAT2 origin = XMFLOAT2(uiTransform->m_normalizedOrigin.x * texDesc.Width,
+				uiTransform->m_normalizedOrigin.y * texDesc.Height);
+
+			RECT bounds;
+			bounds.left = finalPosition.x - (origin.x * scale2.x);
+			bounds.right = bounds.left + (texDesc.Width * scale2.x);
+			bounds.top = finalPosition.y - (origin.y * scale2.y);
+			bounds.bottom = bounds.top + (texDesc.Height * scale2.y);
+			uiTransform->StoreBounds(bounds);
+
+			spriteBatch->Draw(srv, finalPosition, nullptr, Colors::White, uiTransform->m_rotation, origin, scale2);
+		}
+		UITextComponent* uiText = entity->GetComponent<UITextComponent>();
+		if (uiText) {
+			XMVECTOR dimensions = uiText->m_font->MeasureString(uiText->m_text.c_str());
+			XMFLOAT2 dimensionsData;
+			XMStoreFloat2(&dimensionsData, dimensions);
+			XMFLOAT2 origin = XMFLOAT2(
+				uiTransform->m_normalizedOrigin.x * dimensionsData.x,
+				uiTransform->m_normalizedOrigin.y * dimensionsData.y
+			);
+
+			RECT bounds;
+			bounds.left = finalPosition.x - (origin.x * scale2.x);
+			bounds.right = bounds.left + (dimensionsData.x * scale2.x);
+			bounds.top = finalPosition.y - (origin.y * scale2.y);
+			bounds.bottom = bounds.top + (dimensionsData.y * scale2.y);
+			uiTransform->StoreBounds(bounds);
+
+			uiText->m_font->DrawString(
+				spriteBatch, uiText->m_text.c_str(), finalPosition,
+				uiText->m_color, uiTransform->m_rotation, origin, scale2
+			);
+		}
+	}
+	spriteBatch->End();
+	// Reset any states that may be changed by sprite batch!
+	float blendFactor[4] = { 1,1,1,1 };
+	context->OMSetBlendState(0, blendFactor, 0xFFFFFFFF);
+	context->RSSetState(0);
+	context->OMSetDepthStencilState(0, 0);
 
 }
 
