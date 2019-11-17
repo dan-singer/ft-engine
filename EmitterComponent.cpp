@@ -341,7 +341,7 @@ void EmitterComponent::Tick(float deltaTime)
 		for (int i = m_firstAliveIndex; i < m_firstDeadIndex; i++)
 			UpdateSingleParticle(deltaTime, i);
 	}
-	else
+	else if (m_firstDeadIndex > m_firstDeadIndex)
 	{
 		// Update first half (from firstAlive to max particles)
 		for (int i = m_firstAliveIndex; i < m_maxParticles; i++)

@@ -72,15 +72,29 @@ private:
 	DirectX::XMFLOAT3 CalcParticleVertexPosition(int particleIndex, int quadCornerIndex, CameraComponent* camera);
 	void CopyParticlesToGPU(ID3D11DeviceContext* context, CameraComponent* camera);
 
+	// --------------------------------------------------------
+	// Parses a float3 out of a JSON array
+	// --------------------------------------------------------
 	DirectX::XMFLOAT3 ParseFloat3(rapidjson::Document& document, const char* key);
+
+	// --------------------------------------------------------
+	// Parses a float4 out of a JSON array
+	// --------------------------------------------------------
 	DirectX::XMFLOAT4 ParseFloat4(rapidjson::Document& document, const char* key);
 
 
+	// --------------------------------------------------------
+	// Initialize private variables. This should be called from 
+	// the public Init methods.
+	// --------------------------------------------------------
 	void InitInternal();
 
 public:
 	EmitterComponent(Entity* entity) : Component(entity) { }
 
+	// --------------------------------------------------------
+	// Setup method for this component.
+	// --------------------------------------------------------
 	void Init(
 		int maxParticles,
 		int particlesPerSecond,
@@ -99,12 +113,15 @@ public:
 		ID3D11Device* device
 	);
 
+	// --------------------------------------------------------
+	// Setup method for this component accepting a configuration json file
+	// @param const std::string & configPath path to json file
+	// --------------------------------------------------------
 	void Init(const std::string& configPath, ID3D11Device* device);
 
 	virtual void Start() override;
 
 	virtual void Tick(float deltaTime) override;
-
 
 	virtual ~EmitterComponent();
 };
