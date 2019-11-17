@@ -12,7 +12,7 @@
 #include "World.h"
 #include "RigidBodyComponent.h"
 #include "UITransform.h"
-
+#include "EmitterComponent.h"
 // --------------------------------------------------------
 // Base Entity class which contains a list of Components.
 // Entities come with the Transform component by default.
@@ -31,6 +31,7 @@ protected:
 	MaterialComponent* m_materialComponent = nullptr;
 	RigidBodyComponent* m_rigidBodyComponent = nullptr;
 	UITransform* m_uiTransform = nullptr;
+	EmitterComponent* m_emitter = nullptr;
 	// Use the World to instantiate an Entity
 	Entity(const std::string& name);
 public:
@@ -68,6 +69,10 @@ public:
 		UITransform* castedUITransform = dynamic_cast<UITransform*>(newComponent);
 		if (castedUITransform) {
 			m_uiTransform = castedUITransform;
+		}
+		EmitterComponent* castedEmitter = dynamic_cast<EmitterComponent*>(newComponent);
+		if (castedEmitter) {
+			m_emitter = castedEmitter;
 		}
 
 		return newComponent;
@@ -121,6 +126,8 @@ public:
 
 	UITransform* GetUITransform() { return m_uiTransform; }
 
+	EmitterComponent* GetEmitter() { return m_emitter; }
+
 	// --------------------------------------------------------
 	// Returns the mesh component attached to this Entity.
 	// Note that this CAN be nullptr if a mesh hasn't been attached.
@@ -143,7 +150,7 @@ public:
 	// --------------------------------------------------------
 	void PrepareMaterial(DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 projection, DirectX::XMFLOAT3 cameraPos, LightComponent::Light lights[], int numLights);
 
-
+	void PrepareParticleMaterial(CameraComponent* camera);
 	// --------------------------------------------------------
 	// Manually call start on all Components. Only use this if 
 	// you've just manually instantiated an Entity.

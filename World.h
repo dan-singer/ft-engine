@@ -33,6 +33,8 @@ private:
 	std::map<std::string, Material*> m_materials;
 	std::map<std::string, ID3D11ShaderResourceView*> m_SRVs;
 	std::map<std::string, ID3D11SamplerState*> m_samplerStates;
+	std::map<std::string, ID3D11DepthStencilState*> m_depthStencilStates;
+	std::map<std::string, ID3D11BlendState*> m_blendStates;
 	std::map<std::string, DirectX::SpriteBatch*> m_spriteBatches;
 	std::map<std::string, DirectX::SpriteFont*> m_fonts;
 	std::queue<Entity*> m_spawnQueue;
@@ -125,7 +127,8 @@ public:
 	// Creates a Material and adds it to the internal Materials map
 	// --------------------------------------------------------
 	Material* CreateMaterial(const std::string& name, SimpleVertexShader* vertexShader, SimplePixelShader* pixelShader,
-		ID3D11ShaderResourceView* diffuseSRV, ID3D11ShaderResourceView* normalSRV, ID3D11SamplerState* samplerState);
+		ID3D11ShaderResourceView* diffuseSRV, ID3D11ShaderResourceView* normalSRV, ID3D11SamplerState* samplerState,
+		ID3D11BlendState* blendState = nullptr, ID3D11DepthStencilState* depthStencilState = nullptr);
 	Material* GetMaterial(const std::string& name);
 
 	// --------------------------------------------------------
@@ -139,6 +142,18 @@ public:
 	// --------------------------------------------------------
 	ID3D11SamplerState* CreateSamplerState(const std::string& name, D3D11_SAMPLER_DESC* description, ID3D11Device* device);
 	ID3D11SamplerState* GetSamplerState(const std::string& name);
+
+	// --------------------------------------------------------
+	// Create a depth stencil state and store it in the internal map
+	// --------------------------------------------------------
+	ID3D11DepthStencilState* CreateDepthStencilState(const std::string& name, D3D11_DEPTH_STENCIL_DESC* description, ID3D11Device* device);
+	ID3D11DepthStencilState* GetDepthStencilState(const std::string& name);
+
+	// --------------------------------------------------------
+	// Create a blend state and store it in the internal map
+	// --------------------------------------------------------
+	ID3D11BlendState* CreateBlendState(const std::string& name, D3D11_BLEND_DESC* description, ID3D11Device* device);
+	ID3D11BlendState* GetBlendState(const std::string& name);
 
 	// --------------------------------------------------------
 	// Create a SpriteBatch and store it in the internal map

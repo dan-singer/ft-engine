@@ -1,0 +1,16 @@
+{
+    "max-particles": 110,
+    "particles-per-second": 40,
+    "lifetime": 0.5,
+    "emitter-lifetime": 0.5,
+    "start-size": 0.1,
+    "end-size": 2.0,
+    "start-color": [1, 0.1, 0.1, 0.7],
+    "end-color": [1, 0.6, 0.1, 0],
+    "start-velocity": [0, 0, 0],
+    "velocity-random-range": [0.5, 0.5, 0.5],
+    "emitter-position": [2, 0, 0],
+    "position-random-range": [0.1, 0.1, 0.1],
+    "rotation-random-ranges": [-2, 2, -2, 2],
+    "acceleration": [0, 0, 0]
+}

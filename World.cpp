@@ -184,9 +184,12 @@ SimplePixelShader* World::GetPixelShader(const std::string& name)
 	return m_pixelShaders[name];
 }
 
-Material* World::CreateMaterial(const std::string& name, SimpleVertexShader* vertexShader, SimplePixelShader* pixelShader, ID3D11ShaderResourceView* diffuseSRV, ID3D11ShaderResourceView* normalSRV, ID3D11SamplerState* samplerState)
+Material* World::CreateMaterial(
+	const std::string& name, SimpleVertexShader* vertexShader, SimplePixelShader* pixelShader,
+	ID3D11ShaderResourceView* diffuseSRV, ID3D11ShaderResourceView* normalSRV,
+	ID3D11SamplerState* samplerState, ID3D11BlendState* blendState, ID3D11DepthStencilState* depthStencilState)
 {
-	Material* material = new Material(vertexShader, pixelShader, diffuseSRV, normalSRV, samplerState);
+	Material* material = new Material(vertexShader, pixelShader, diffuseSRV, normalSRV, samplerState, blendState, depthStencilState);
 	m_materials[name] = material;
 	return material;
 }
@@ -218,6 +221,30 @@ ID3D11SamplerState* World::CreateSamplerState(const std::string& name, D3D11_SAM
 ID3D11SamplerState* World::GetSamplerState(const std::string& name)
 {
 	return m_samplerStates[name];
+}
+
+ID3D11DepthStencilState* World::CreateDepthStencilState(const std::string& name, D3D11_DEPTH_STENCIL_DESC* description, ID3D11Device* device)
+{
+	m_depthStencilStates[name] = nullptr;
+	device->CreateDepthStencilState(description, &m_depthStencilStates[name]);
+	return m_depthStencilStates[name];
+}
+
+ID3D11DepthStencilState* World::GetDepthStencilState(const std::string& name)
+{
+	return m_depthStencilStates[name];
+}
+
+ID3D11BlendState* World::CreateBlendState(const std::string& name, D3D11_BLEND_DESC* description, ID3D11Device* device)
+{
+	m_blendStates[name] = nullptr;
+	device->CreateBlendState(description, &m_blendStates[name]);
+	return m_blendStates[name];
+}
+
+ID3D11BlendState* World::GetBlendState(const std::string& name)
+{
+	return m_blendStates[name];
 }
 
 DirectX::SpriteBatch* World::CreateSpriteBatch(const std::string& name, ID3D11DeviceContext* context)
@@ -302,8 +329,6 @@ void World::Start()
 
 void World::Tick(float deltaTime)
 {
-
-
 	// Simulate physics
 	m_dynamicsWorld->stepSimulation(deltaTime, 10);
 
@@ -410,10 +435,8 @@ void World::DrawEntities(ID3D11DeviceContext* context, DirectX::SpriteBatch* spr
 	RebuildLights();
 
 	std::queue<Entity*> uiEntities;
+	std::queue<Entity*> particleEntities;
 
-	// Set buffers in the input assembler
-	//  - Do this ONCE PER OBJECT you're drawing, since each object might
-	//    have different geometry.
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
 	for (Entity* entity : m_entities) {
@@ -422,6 +445,10 @@ void World::DrawEntities(ID3D11DeviceContext* context, DirectX::SpriteBatch* spr
 		// Delay rendering UI elements so they can be batched together
 		if (entity->GetUITransform()) {
 			uiEntities.push(entity);
+		}
+		// Delay rendering Particle Emitters 
+		else if (entity->GetEmitter()) {
+			particleEntities.push(entity);
 		}
 		// Render traditional 3D entities
 		else if (entity->GetMesh() && entity->GetMaterial()) {
@@ -434,6 +461,49 @@ void World::DrawEntities(ID3D11DeviceContext* context, DirectX::SpriteBatch* spr
 			context->IASetIndexBuffer(entity->GetMesh()->GetIndexBuffer(), DXGI_FORMAT_R32_UINT, 0);
 			context->DrawIndexed(entity->GetMesh()->GetIndexCount(), 0, 0);
 		}
+	}
+
+	// Particle Systems
+	while (!particleEntities.empty()) {
+		Entity* entity = particleEntities.front();
+		EmitterComponent* emitter = entity->GetEmitter();
+		particleEntities.pop();
+
+
+		Material* particleMat = entity->GetMaterial();
+		// Particle states
+		float blend[4] = { 1,1,1,1 };
+		context->OMSetBlendState(particleMat->GetBlendState(), blend, 0xffffffff);	// Additive blending
+		context->OMSetDepthStencilState(particleMat->GetDepthStencilState(), 0); // No depth WRITING
+		entity->PrepareParticleMaterial(m_mainCamera);
+
+		// Draw the emitter
+		emitter->CopyParticlesToGPU(context, m_mainCamera);
+
+		// Set up buffers
+		UINT stride = sizeof(ParticleVertex);
+		UINT offset = 0;
+		context->IASetVertexBuffers(0, 1, &emitter->m_vertexBuffer, &stride, &offset);
+		context->IASetIndexBuffer(emitter->m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+		// Draw the correct parts of the buffer
+		if (emitter->m_firstAliveIndex < emitter->m_firstDeadIndex)
+		{
+			context->DrawIndexed(emitter->m_livingParticleCount * 6, emitter->m_firstAliveIndex * 6, 0);
+		}
+		else if (emitter->m_firstAliveIndex > emitter->m_firstDeadIndex)
+		{
+			// Draw first half (0 -> dead)
+			context->DrawIndexed(emitter->m_firstDeadIndex * 6, 0, 0);
+
+			// Draw second half (alive -> max)
+			context->DrawIndexed((emitter->m_maxParticles - emitter->m_firstAliveIndex) * 6, emitter->m_firstAliveIndex * 6, 0);
+		}
+
+		// Reset to default states for next frame
+		context->OMSetBlendState(0, blend, 0xffffffff);
+		context->OMSetDepthStencilState(0, 0);
+		context->RSSetState(0);
 	}
 
 	spriteBatch->Begin();
@@ -506,7 +576,6 @@ void World::DrawEntities(ID3D11DeviceContext* context, DirectX::SpriteBatch* spr
 	context->OMSetBlendState(0, blendFactor, 0xFFFFFFFF);
 	context->RSSetState(0);
 	context->OMSetDepthStencilState(0, 0);
-
 }
 
 World::~World()
@@ -552,6 +621,12 @@ World::~World()
 		pair.second->Release();
 	}
 	for (const auto& pair : m_samplerStates) {
+		pair.second->Release();
+	}
+	for (const auto& pair : m_depthStencilStates) {
+		pair.second->Release();
+	}
+	for (const auto& pair : m_blendStates) {
 		pair.second->Release();
 	}
 	for (const auto& pair : m_spriteBatches) {
