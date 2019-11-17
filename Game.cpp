@@ -222,23 +222,25 @@ void Game::CreateEntities()
 	
 	// Particle System Test
 	Entity* particleSystem = world->Instantiate("particle-system");
-	particleSystem->AddComponent<EmitterComponent>()->Init(
-		110,
-		20,
-		5,
-		2.0f,
-		0.1f,
-		2.0f,
-		XMFLOAT4(1, 0.1f, 0.1f, 0.7f),
-		XMFLOAT4(1, 0.6f, 0.1f, 0),
-		XMFLOAT3(-2, 2, 0),
-		XMFLOAT3(0.2f, 0.2f, 0.2f),
-		XMFLOAT3(2, 0, 0),
-		XMFLOAT3(0.1f, 0.1f, 0.1f),
-		XMFLOAT4(-2, 2, -2, 2),
-		XMFLOAT3(0, 0, 0),				
-		device
-	);
+	//particleSystem->AddComponent<EmitterComponent>()->Init(
+	//	110,
+	//	20,
+	//	5,
+	//	2.0f,
+	//	0.1f,
+	//	2.0f,
+	//	XMFLOAT4(1, 0.1f, 0.1f, 0.7f),
+	//	XMFLOAT4(1, 0.6f, 0.1f, 0),
+	//	XMFLOAT3(-2, 2, 0),
+	//	XMFLOAT3(0.2f, 0.2f, 0.2f),
+	//	XMFLOAT3(2, 0, 0),
+	//	XMFLOAT3(0.1f, 0.1f, 0.1f),
+	//	XMFLOAT4(-2, 2, -2, 2),
+	//	XMFLOAT3(0, 0, 0),				
+	//	device
+	//);
+	// Reading particle data from a configuration json file
+	particleSystem->AddComponent<EmitterComponent>()->Init("Assets/Particles/Explosion.json", device);
 	particleSystem->AddComponent<MaterialComponent>()->m_material = world->GetMaterial("particle");
 }
 

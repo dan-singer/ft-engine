@@ -3,6 +3,7 @@
 
 #include <d3d11.h>
 #include <DirectXMath.h>
+#include <rapidjson/document.h>
 #include "CameraComponent.h"
 
 struct Particle
@@ -71,6 +72,12 @@ private:
 	DirectX::XMFLOAT3 CalcParticleVertexPosition(int particleIndex, int quadCornerIndex, CameraComponent* camera);
 	void CopyParticlesToGPU(ID3D11DeviceContext* context, CameraComponent* camera);
 
+	DirectX::XMFLOAT3 ParseFloat3(rapidjson::Document& document, const char* key);
+	DirectX::XMFLOAT4 ParseFloat4(rapidjson::Document& document, const char* key);
+
+
+	void InitInternal();
+
 public:
 	EmitterComponent(Entity* entity) : Component(entity) { }
 
@@ -91,6 +98,8 @@ public:
 		DirectX::XMFLOAT3 emitterAcceleration,
 		ID3D11Device* device
 	);
+
+	void Init(const std::string& configPath, ID3D11Device* device);
 
 	virtual void Start() override;
 

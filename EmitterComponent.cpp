@@ -1,7 +1,11 @@
 #include "EmitterComponent.h"
 #include "Transform.h"
 #include "Entity.h"
+#include <iostream>
+#include <fstream>
+
 using namespace DirectX;
+using namespace rapidjson;
 
 void EmitterComponent::UpdateSingleParticle(float deltaTime, int index)
 {
@@ -121,6 +125,85 @@ void EmitterComponent::CopyParticlesToGPU(ID3D11DeviceContext* context, CameraCo
 	context->Unmap(m_vertexBuffer, 0);
 }
 
+DirectX::XMFLOAT3 EmitterComponent::ParseFloat3(rapidjson::Document& document, const char* key)
+{
+	auto& a = document[key];
+	XMFLOAT3 float3 = XMFLOAT3(
+		a[0].GetDouble(),
+		a[1].GetDouble(),
+		a[2].GetDouble()
+	);
+	return float3;
+}
+
+DirectX::XMFLOAT4 EmitterComponent::ParseFloat4(Document& document, const char* key)
+{
+	auto& a = document[key];
+	XMFLOAT4 float4 = XMFLOAT4(
+		a[0].GetDouble(),
+		a[1].GetDouble(),
+		a[2].GetDouble(),
+		a[3].GetDouble()
+	);
+	return float4;
+}
+
+void EmitterComponent::InitInternal()
+{
+	m_timeSinceEmit = 0;
+	m_livingParticleCount = 0;
+	m_firstAliveIndex = 0;
+	m_firstDeadIndex = 0;
+	m_age = 0;
+
+	m_particles = new Particle[m_maxParticles]{};
+	// Create local particle vertices
+	m_defaultUVs[0] = XMFLOAT2(0, 0);
+	m_defaultUVs[1] = XMFLOAT2(1, 0);
+	m_defaultUVs[2] = XMFLOAT2(1, 1);
+	m_defaultUVs[3] = XMFLOAT2(0, 1);
+
+	m_localParticleVertices = new ParticleVertex[4 * m_maxParticles];
+	for (int i = 0; i < m_maxParticles * 4; i += 4) {
+		m_localParticleVertices[i + 0].UV = m_defaultUVs[0];
+		m_localParticleVertices[i + 1].UV = m_defaultUVs[1];
+		m_localParticleVertices[i + 2].UV = m_defaultUVs[2];
+		m_localParticleVertices[i + 3].UV = m_defaultUVs[3];
+	}
+
+	// Dynamic Vertex Buffer
+	D3D11_BUFFER_DESC vbDesc = {};
+	vbDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	vbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	vbDesc.Usage = D3D11_USAGE_DYNAMIC;
+	vbDesc.ByteWidth = sizeof(ParticleVertex) * 4 * m_maxParticles;
+	m_device->CreateBuffer(&vbDesc, 0, &m_vertexBuffer);
+
+	unsigned int* indices = new unsigned int[m_maxParticles * 6];
+	int indexCount = 0;
+	for (int i = 0; i < m_maxParticles * 4; i += 4)
+	{
+		indices[indexCount++] = i;
+		indices[indexCount++] = i + 1;
+		indices[indexCount++] = i + 2;
+		indices[indexCount++] = i;
+		indices[indexCount++] = i + 2;
+		indices[indexCount++] = i + 3;
+	}
+	D3D11_SUBRESOURCE_DATA indexData = {};
+	indexData.pSysMem = indices;
+
+	// Regular (static) index buffer
+	D3D11_BUFFER_DESC ibDesc = {};
+	ibDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	ibDesc.CPUAccessFlags = 0;
+	ibDesc.Usage = D3D11_USAGE_DEFAULT;
+	ibDesc.ByteWidth = sizeof(unsigned int) * m_maxParticles * 6;
+	m_device->CreateBuffer(&ibDesc, &indexData, &m_indexBuffer);
+
+	delete[] indices;
+}
+
 void EmitterComponent::CopyOneParticle(int index, CameraComponent* camera)
 {
 	int i = index * 4;
@@ -205,58 +288,44 @@ void EmitterComponent::Init(
 	m_emitterAcceleration = emitterAcceleration;
 	m_device = device;
 
-	m_timeSinceEmit = 0;
-	m_livingParticleCount = 0;
-	m_firstAliveIndex = 0;
-	m_firstDeadIndex = 0;
-	m_age = 0;
+	InitInternal();
+}
 
-	m_particles = new Particle[m_maxParticles]{};
-	// Create local particle vertices
-	m_defaultUVs[0] = XMFLOAT2(0, 0);
-	m_defaultUVs[1] = XMFLOAT2(1, 0);
-	m_defaultUVs[2] = XMFLOAT2(1, 1);
-	m_defaultUVs[3] = XMFLOAT2(0, 1);
+void EmitterComponent::Init(const std::string& configPath, ID3D11Device* device)
+{
+	// Read the entire document into a string
+	std::ifstream input(configPath);
 
-	m_localParticleVertices = new ParticleVertex[4 * m_maxParticles];
-	for (int i = 0; i < m_maxParticles * 4; i += 4) {
-		m_localParticleVertices[i + 0].UV = m_defaultUVs[0];
-		m_localParticleVertices[i + 1].UV = m_defaultUVs[1];
-		m_localParticleVertices[i + 2].UV = m_defaultUVs[2];
-		m_localParticleVertices[i + 3].UV = m_defaultUVs[3];
-	}
+	// @see https://stackoverflow.com/questions/2602013/read-whole-ascii-file-into-c-stdstring
+	std::string fileContents((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
 
-	// Dynamic Vertex Buffer
-	D3D11_BUFFER_DESC vbDesc = {};
-	vbDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	vbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	vbDesc.Usage = D3D11_USAGE_DYNAMIC;
-	vbDesc.ByteWidth = sizeof(ParticleVertex) * 4 * m_maxParticles;
-	device->CreateBuffer(&vbDesc, 0, &m_vertexBuffer);
+	// Use RapidJson to parse the configuration file
+	Document document;
+	document.Parse(fileContents.c_str());
+	input.close();
 
-	unsigned int* indices = new unsigned int[m_maxParticles * 6];
-	int indexCount = 0;
-	for (int i = 0; i < maxParticles * 4; i += 4)
-	{
-		indices[indexCount++] = i;
-		indices[indexCount++] = i + 1;
-		indices[indexCount++] = i + 2;
-		indices[indexCount++] = i;
-		indices[indexCount++] = i + 2;
-		indices[indexCount++] = i + 3;
-	}
-	D3D11_SUBRESOURCE_DATA indexData = {};
-	indexData.pSysMem = indices;
+	Transform* transform = GetOwner()->GetTransform();
 
-	// Regular (static) index buffer
-	D3D11_BUFFER_DESC ibDesc = {};
-	ibDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	ibDesc.CPUAccessFlags = 0;
-	ibDesc.Usage = D3D11_USAGE_DEFAULT;
-	ibDesc.ByteWidth = sizeof(unsigned int) * maxParticles * 6;
-	device->CreateBuffer(&ibDesc, &indexData, &m_indexBuffer);
+	m_maxParticles = document["max-particles"].GetInt();
+	m_particlesPerSecond = document["particles-per-second"].GetInt();
+	m_secondsPerParticle = 1.0f / m_particlesPerSecond;
+	m_lifetime = document["lifetime"].GetDouble();
+	m_emitterLifetime = document["emitter-lifetime"].GetDouble();
+	m_startSize = document["start-size"].GetDouble();
+	m_endSize = document["end-size"].GetDouble();
 
-	delete[] indices;
+	m_startColor = ParseFloat4(document, "start-color");
+	m_endColor = ParseFloat4(document, "end-color");
+
+	m_startVelocity = ParseFloat3(document, "start-velocity");
+	m_velocityRandomRange = ParseFloat3(document, "velocity-random-range");
+	transform->SetPosition(ParseFloat3(document, "emitter-position"));
+	m_positionRandomRange = ParseFloat3(document, "position-random-range");
+	m_rotationRandomRanges = ParseFloat4(document, "rotation-random-ranges");
+	m_emitterAcceleration = ParseFloat3(document, "acceleration");
+
+	m_device = device;
+	InitInternal();
 }
 
 void EmitterComponent::Start()

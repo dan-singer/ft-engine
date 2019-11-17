@@ -491,7 +491,7 @@ void World::DrawEntities(ID3D11DeviceContext* context, DirectX::SpriteBatch* spr
 		{
 			context->DrawIndexed(emitter->m_livingParticleCount * 6, emitter->m_firstAliveIndex * 6, 0);
 		}
-		else
+		else if (emitter->m_firstAliveIndex > emitter->m_firstDeadIndex)
 		{
 			// Draw first half (0 -> dead)
 			context->DrawIndexed(emitter->m_firstDeadIndex * 6, 0, 0);
