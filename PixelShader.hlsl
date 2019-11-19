@@ -111,18 +111,25 @@ float4 pointLight(int index, float4 surfaceColor, float3 normal, float3 toCamera
 {
 	float3 lightDir = normalize(worldPos - lights[index].position);
 	float NdotL = saturate(dot(normal, -lightDir)) * lights[index].intensity;
+	float NdotV = saturate(dot(toCamera, normal));
 	float4 diffuse = surfaceColor * float4(lights[index].color, 1) * NdotL;
 
 	// Specular
-	float3 h = normalize(-lightDir + toCamera);
+	float3 h = normalize((-lightDir + toCamera) / 2);
 	float NdotH = saturate(dot(normal, h));
-	float specAmt = shininess > 0 ? pow(NdotH, shininess) : 0;
+
+	float D = SpecDistribution(normal, h);
+	float3 F = Fresnel(toCamera, h, specColor);
+	float G = GeometricShadowing(normal, toCamera, h) * GeometricShadowing(normal, lightDir, h);
+
+	float3 specular = microFacet(D, F, G, NdotL, NdotV);
+	float3 conservedEnergy = DiffuseEnergyConserve(diffuse, specular);
 
 	// Range-based attenuation
 	float dist = distance(worldPos, lights[index].position);
 	float att = saturate(1.0 - dist * dist / (lights[index].range * lights[index].range));
 
-	return att * (diffuse + specAmt);
+	return att * float4(conservedEnergy, 1);
 }
 
 float4 spotLight(int index, float4 surfaceColor, float3 normal, float3 toCamera, float3 worldPos)
@@ -130,21 +137,28 @@ float4 spotLight(int index, float4 surfaceColor, float3 normal, float3 toCamera,
 	float3 lightDir = normalize(worldPos - lights[index].position);
 
 	float NdotL = saturate(dot(normal, -lightDir)) * lights[index].intensity;
+	float NdotV = saturate(dot(toCamera, normal));
 	float4 diffuse = surfaceColor * float4(lights[index].color, 1) * NdotL;
 
 	float angleFromCenter = max(dot(-lightDir, lights[index].direction), 0.0f);
 	float spotAmount = pow(angleFromCenter, lights[index].spotFalloff) * lights[index].intensity;
 
 	// Specular
-	float3 h = normalize(-lightDir + toCamera);
+	float3 h = saturate((-lightDir + toCamera) / 2);
 	float NdotH = saturate(dot(normal, h));
-	float specAmt = shininess > 0 ? pow(NdotH, shininess) : 0;
+
+	float D = SpecDistribution(normal, h);
+	float3 F = Fresnel(toCamera, h, specColor);
+	float G = GeometricShadowing(normal, toCamera, h) * GeometricShadowing(normal, lightDir, h);
+
+	float3 specular = microFacet(D, F, G, NdotL, NdotV);
+	float3 conservedEnergy = DiffuseEnergyConserve(diffuse, specular);
 
 	// Range-based attenuation
 	float dist = distance(worldPos, lights[index].position);
 	float att = saturate(1.0 - dist * dist / (lights[index].range * lights[index].range));
 
-	return att * spotAmount * (diffuse + specAmt);
+	return att * spotAmount * float4(conservedEnergy, 1);
 }
 
 
