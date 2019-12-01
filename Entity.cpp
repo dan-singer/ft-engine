@@ -50,8 +50,11 @@ void Entity::PrepareParticleMaterial(CameraComponent* camera)
 
 void Entity::StartAllComponents()
 {
-	for (Component* component : m_components) {
-		component->Start();
+	if (!m_hasStarted) {
+		for (Component* component : m_components) {
+			component->Start();
+		}
+		m_hasStarted = true;
 	}
 }
 

@@ -56,7 +56,6 @@ void Game::Init()
 {
 	LoadResources();
 	CreateEntities();	
-	World::GetInstance()->Start();
 	// Tell the input assembler stage of the pipeline what kind of
 	// geometric primitives (points, lines or triangles) we want to draw.  
 	// Essentially: "What kind of shape should the GPU draw with our data?"
@@ -73,12 +72,19 @@ void Game::LoadResources()
 {
 	World* world = World::GetInstance();
 
+	world->SetDevice(device);
+
 	// Meshes
 	world->CreateMesh("cube", "Assets/Models/cube.obj", device);
 
 	// Shaders
 	SimpleVertexShader* vs = world->CreateVertexShader("vs", device, context, L"VertexShader.cso");
-	SimplePixelShader* ps  = world->CreatePixelShader("ps", device, context, L"PixelShader.cso");
+	SimplePixelShader* uiPs = world->CreatePixelShader("ui", device, context, L"UIPixelShader.cso");
+	SimplePixelShader* ps = world->CreatePixelShader("ps", device, context, L"PixelShader.cso");
+	//sky shaders
+	SimpleVertexShader* vsSky = world->CreateVertexShader("vsSky", device, context, L"VSSkyBox.cso");
+	SimplePixelShader* psSky = world->CreatePixelShader("psSky", device, context, L"PSSkyBox.cso");
+	// Particle shaders
 	SimpleVertexShader* particleVs = world->CreateVertexShader("particle", device, context, L"ParticleVS.cso");
 	SimplePixelShader* particlePs = world->CreatePixelShader("particle", device, context, L"ParticlePS.cso");
 
@@ -88,6 +94,9 @@ void Game::LoadResources()
 	world->CreateTexture("velvet_normal", device, context, L"Assets/Textures/Velvet_N.jpg");
 	world->CreateTexture("particle", device, context, L"Assets/Textures/particle.jpg");
 
+	//skyTexture
+	world->CreateCubeTexture("sky", device, context, L"Assets/Textures/spacebox.dds");
+
 	// Create the sampler state
 	D3D11_SAMPLER_DESC samplerDesc = {};
 	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -96,6 +105,18 @@ void Game::LoadResources()
 	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	world->CreateSamplerState("main", &samplerDesc, device);
+
+	//Skybox stuff
+	D3D11_RASTERIZER_DESC rd = {};
+	rd.FillMode = D3D11_FILL_SOLID;
+	rd.CullMode = D3D11_CULL_FRONT;
+	world->CreateRasterizerState("skyRastState", &rd, device);
+
+	D3D11_DEPTH_STENCIL_DESC ds = {};
+	ds.DepthEnable = true;
+	ds.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	ds.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+	world->CreateDepthStencilState("skyDepthState", &ds, device);
 
 	// UI
 	world->CreateSpriteBatch("main", context);
