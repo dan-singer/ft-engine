@@ -98,8 +98,8 @@ void Game::LoadResources()
 	world->CreateMaterial("leather", vs, ps, world->GetTexture("leather"), world->GetTexture("velvet_normal"), world->GetSamplerState("main"));
 	world->CreateMaterial("metal", vs, ps, world->GetTexture("metal"), world->GetTexture("velvet_normal"), world->GetSamplerState("main"));
 	world->GetMaterial("metal")->m_specColor = DirectX::XMFLOAT3(0.662124f, 0.654864f, 0.633732f);
-	world->GetMaterial("metal")->m_roughness = 0.1f;
-	world->GetMaterial("metal")->m_metalness = 0.8f;
+	world->GetMaterial("metal")->m_roughness = 1.0f;
+	world->GetMaterial("metal")->m_metalness = 0;
 
 	// UI
 	world->CreateSpriteBatch("main", context);
@@ -139,9 +139,9 @@ void Game::CreateEntities()
 	LightComponent* dirLightComp = dirLight->AddComponent<LightComponent>();
 	dirLightComp->m_data.type = LightComponent::Directional;
 	dirLightComp->m_data.color = XMFLOAT3(1.0f, 1.0f, 1.0f);
-	dirLightComp->m_data.intensity = 2.0f;
+	dirLightComp->m_data.intensity = 1.0f;
 	
-	Entity* pointLight = world->Instantiate("PointLight1");
+	/*Entity* pointLight = world->Instantiate("PointLight1");
 	LightComponent* pointLightComp = pointLight->AddComponent<LightComponent>();
 	pointLightComp->m_data.type = LightComponent::Point;
 	pointLightComp->m_data.color = XMFLOAT3(1.0f, 0, 0);
@@ -157,7 +157,7 @@ void Game::CreateEntities()
 	spotLight->GetTransform()->SetPosition(XMFLOAT3(1, 1, 0));
 	XMFLOAT4 spotLightRot;
 	XMStoreFloat4(&spotLightRot, XMQuaternionRotationRollPitchYaw(0, 90.0f, 0));
-	spotLight->GetTransform()->SetRotation(spotLightRot);
+	spotLight->GetTransform()->SetRotation(spotLightRot);*/
 
 	Entity* sprite = world->Instantiate("sprite");
 	sprite->AddComponent<UITransform>()->Init(Anchor::BOTTOM_RIGHT, 0, XMFLOAT2(1, 1), XMFLOAT2(.25f,.25f), XMFLOAT2(0, 0));
