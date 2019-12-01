@@ -7,6 +7,11 @@
 #include "DebugMovement.h"
 #include "World.h"
 #include "Rotator.h"
+#include "RigidBodyComponent.h"
+#include "CollisionTester.h"
+#include <SpriteFont.h>
+#include "UITextComponent.h"
+#include "ButtonComponent.h"
 
 // For the DirectX Math library
 using namespace DirectX;
@@ -51,7 +56,6 @@ void Game::Init()
 {
 	LoadResources();
 	CreateEntities();	
-	World::GetInstance()->Start();
 	// Tell the input assembler stage of the pipeline what kind of
 	// geometric primitives (points, lines or triangles) we want to draw.  
 	// Essentially: "What kind of shape should the GPU draw with our data?"
@@ -68,16 +72,30 @@ void Game::LoadResources()
 {
 	World* world = World::GetInstance();
 
+	world->SetDevice(device);
+
 	// Meshes
 	world->CreateMesh("cube", "Assets/Models/cube.obj", device);
 
 	// Shaders
 	SimpleVertexShader* vs = world->CreateVertexShader("vs", device, context, L"VertexShader.cso");
-	SimplePixelShader* ps  = world->CreatePixelShader("ps", device, context, L"PixelShader.cso");
+	SimplePixelShader* uiPs = world->CreatePixelShader("ui", device, context, L"UIPixelShader.cso");
+	SimplePixelShader* ps = world->CreatePixelShader("ps", device, context, L"PixelShader.cso");
+	//sky shaders
+	SimpleVertexShader* vsSky = world->CreateVertexShader("vsSky", device, context, L"VSSkyBox.cso");
+	SimplePixelShader* psSky = world->CreatePixelShader("psSky", device, context, L"PSSkyBox.cso");
+	// Particle shaders
+	SimpleVertexShader* particleVs = world->CreateVertexShader("particle", device, context, L"ParticleVS.cso");
+	SimplePixelShader* particlePs = world->CreatePixelShader("particle", device, context, L"ParticlePS.cso");
 
 	// Textures
 	world->CreateTexture("leather", device, context, L"Assets/Textures/Leather.jpg");
 	world->CreateTexture("metal", device, context, L"Assets/Textures/BareMetal.png");
+	world->CreateTexture("velvet_normal", device, context, L"Assets/Textures/Velvet_N.jpg");
+	world->CreateTexture("particle", device, context, L"Assets/Textures/particle.jpg");
+
+	//skyTexture
+	ID3D11ShaderResourceView* skyTex = world->CreateCubeTexture("sky", device, context, L"Assets/Textures/spacebox.dds");
 
 	// Create the sampler state
 	D3D11_SAMPLER_DESC samplerDesc = {};
@@ -88,8 +106,63 @@ void Game::LoadResources()
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	world->CreateSamplerState("main", &samplerDesc, device);
 
-	world->CreateMaterial("leather", vs, ps, world->GetTexture("leather"), world->GetSamplerState("main"));
-	world->CreateMaterial("metal", vs, ps, world->GetTexture("metal"), world->GetSamplerState("main"));
+	//Skybox stuff
+	D3D11_RASTERIZER_DESC rd = {};
+	rd.FillMode = D3D11_FILL_SOLID;
+	rd.CullMode = D3D11_CULL_FRONT;
+	world->CreateRasterizerState("skyRastState", &rd, device);
+
+	D3D11_DEPTH_STENCIL_DESC ds = {};
+	ds.DepthEnable = true;
+	ds.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	ds.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+	world->CreateDepthStencilState("skyDepthState", &ds, device);
+
+	// UI
+	world->CreateSpriteBatch("main", context);
+	world->CreateFont("Open Sans", device, L"Assets/Fonts/open-sans.spritefont");
+
+
+	// Particles
+	D3D11_DEPTH_STENCIL_DESC particleDsDesc = {};
+	particleDsDesc.DepthEnable = true;
+	particleDsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO; // Disable depth writing
+	particleDsDesc.DepthFunc = D3D11_COMPARISON_LESS;
+	world->CreateDepthStencilState("particle", &particleDsDesc, device);
+
+	D3D11_BLEND_DESC particleBlendDesc = {};
+	particleBlendDesc.AlphaToCoverageEnable = false;
+	particleBlendDesc.IndependentBlendEnable = false;
+	particleBlendDesc.RenderTarget[0].BlendEnable = true;
+	particleBlendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	particleBlendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA; // Still respect pixel shader output alpha
+	particleBlendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+	particleBlendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	particleBlendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+	particleBlendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
+	particleBlendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	world->CreateBlendState("particle", &particleBlendDesc, device);
+
+	
+
+	// Materials
+	world->CreateMaterial("leather", vs, ps, world->GetTexture("leather"), world->GetTexture("velvet_normal"), skyTex, world->GetSamplerState("main"));
+	Material* metal = world->CreateMaterial("metal", vs, ps, world->GetTexture("metal"), world->GetTexture("velvet_normal"), skyTex, world->GetSamplerState("main"));
+	metal->m_specColor = DirectX::XMFLOAT3(0.662124f, 0.654864f, 0.633732f);
+	metal->m_roughness = 1.0f;
+	metal->m_metalness = 0;
+	world->CreateMaterial(
+		"particle",
+		particleVs,
+		particlePs,
+		world->GetTexture("particle"),
+		nullptr,
+		nullptr,
+		world->GetSamplerState("main"),
+		world->GetBlendState("particle"),
+		world->GetDepthStencilState("particle")
+	);
+
 }
 
 
@@ -99,11 +172,20 @@ void Game::CreateEntities()
 
 	Entity* cube1 = world->Instantiate("cube1");
 	cube1->GetTransform()->SetPosition(XMFLOAT3(0, 0, 0));
+	XMFLOAT4 rot;
+	XMStoreFloat4(&rot, XMQuaternionRotationRollPitchYaw(10.0f, 10.0f, 10.0f));
+	cube1->GetTransform()->SetRotation(rot);
 	cube1->AddComponent<MeshComponent>()->m_mesh = world->GetMesh("cube");
 	cube1->AddComponent<MaterialComponent>()->m_material = world->GetMaterial("metal");
-	Rotator* rot = cube1->AddComponent<Rotator>();
-	rot->eulerDelta.x = 1.0f;
-	rot->eulerDelta.y = 1.0f;
+	RigidBodyComponent* rb = cube1->AddComponent<RigidBodyComponent>();
+	rb->SetBoxCollider(.5f, .5f, .5f);
+	rb->m_mass = 1.0f; // This has mass so it will be affected by gravity
+
+	Entity* ground = world->Instantiate("ground");
+	ground->GetTransform()->SetPosition(XMFLOAT3(0, -3, 0));
+	ground->AddComponent<MeshComponent>()->m_mesh = world->GetMesh("cube");
+	ground->AddComponent<MaterialComponent>()->m_material = world->GetMaterial("metal");
+	ground->AddComponent<RigidBodyComponent>()->SetBoxCollider(.5f, .5f, .5f);
 
 	Entity* camera = world->Instantiate("Cam");
 	CameraComponent* cc = camera->AddComponent<CameraComponent>();
@@ -118,7 +200,7 @@ void Game::CreateEntities()
 	dirLightComp->m_data.color = XMFLOAT3(1.0f, 1.0f, 1.0f);
 	dirLightComp->m_data.intensity = 1.0f;
 	
-	Entity* pointLight = world->Instantiate("PointLight1");
+	/*Entity* pointLight = world->Instantiate("PointLight1");
 	LightComponent* pointLightComp = pointLight->AddComponent<LightComponent>();
 	pointLightComp->m_data.type = LightComponent::Point;
 	pointLightComp->m_data.color = XMFLOAT3(1.0f, 0, 0);
@@ -134,7 +216,56 @@ void Game::CreateEntities()
 	spotLight->GetTransform()->SetPosition(XMFLOAT3(1, 1, 0));
 	XMFLOAT4 spotLightRot;
 	XMStoreFloat4(&spotLightRot, XMQuaternionRotationRollPitchYaw(0, 90.0f, 0));
-	spotLight->GetTransform()->SetRotation(spotLightRot);
+	spotLight->GetTransform()->SetRotation(spotLightRot);*/
+
+	Entity* sprite = world->Instantiate("sprite");
+	sprite->AddComponent<UITransform>()->Init(Anchor::BOTTOM_RIGHT, 0, XMFLOAT2(1, 1), XMFLOAT2(.25f,.25f), XMFLOAT2(0, 0));
+	sprite->AddComponent<MaterialComponent>()->m_material = world->GetMaterial("leather");
+	ButtonComponent* spriteButton = sprite->AddComponent<ButtonComponent>();
+	spriteButton->AddOnEnter([]() 
+		{
+			printf("Entered\n");
+		}
+	);
+	spriteButton->AddOnExit([]()
+		{
+			printf("Exited\n");
+		}
+	);
+
+	Entity* text = world->Instantiate("text");
+	text->AddComponent<UITransform>()->Init(Anchor::CENTER_CENTER, 0, XMFLOAT2(.5f, .5f), XMFLOAT2(1, 1), XMFLOAT2(0, 0));
+	text->AddComponent<UITextComponent>()->Init("Hello World", world->GetFont("Open Sans"), Colors::White);
+	ButtonComponent* button = text->AddComponent<ButtonComponent>();
+	button->AddOnClick([]() 
+		{
+			Entity* text = World::GetInstance()->Find("text");
+			text->GetComponent<UITextComponent>()->m_color = Colors::Black;
+		}
+	);
+	
+	// Particle System Test
+	Entity* particleSystem = world->Instantiate("particle-system");
+	//particleSystem->AddComponent<EmitterComponent>()->Init(
+	//	110,
+	//	20,
+	//	5,
+	//	2.0f,
+	//	0.1f,
+	//	2.0f,
+	//	XMFLOAT4(1, 0.1f, 0.1f, 0.7f),
+	//	XMFLOAT4(1, 0.6f, 0.1f, 0),
+	//	XMFLOAT3(-2, 2, 0),
+	//	XMFLOAT3(0.2f, 0.2f, 0.2f),
+	//	XMFLOAT3(2, 0, 0),
+	//	XMFLOAT3(0.1f, 0.1f, 0.1f),
+	//	XMFLOAT4(-2, 2, -2, 2),
+	//	XMFLOAT3(0, 0, 0),				
+	//	device
+	//);
+	// Reading particle data from a configuration json file
+	particleSystem->AddComponent<EmitterComponent>()->Init("Assets/Particles/Explosion.json", device);
+	particleSystem->AddComponent<MaterialComponent>()->m_material = world->GetMaterial("particle");
 }
 
 // --------------------------------------------------------
@@ -178,9 +309,10 @@ void Game::Draw(float deltaTime, float totalTime)
 		1.0f,
 		0);
 
-
+	
 	// Draw each entity
-	World::GetInstance()->DrawEntities(context);
+	SpriteBatch* mainSpriteBatch = World::GetInstance()->GetSpriteBatch("main");
+	World::GetInstance()->DrawEntities(context, mainSpriteBatch, width, height);
 
 	// Present the back buffer to the user
 	//  - Puts the final frame we're drawing into the window so the user can see it
@@ -190,6 +322,8 @@ void Game::Draw(float deltaTime, float totalTime)
 	// Due to the usage of a more sophisticated swap chain effect,
 	// the render target must be re-bound after every call to Present()
 	context->OMSetRenderTargets(1, &backBufferRTV, depthStencilView);
+
+
 }
 
 
