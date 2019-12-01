@@ -31,6 +31,23 @@ void Entity::PrepareMaterial(DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 proje
 	ps->CopyAllBufferData();
 }
 
+void Entity::PrepareParticleMaterial(CameraComponent* camera)
+{
+	Material* material = GetMaterial();
+	SimpleVertexShader* vs = material->GetVertexShader();
+	SimplePixelShader* ps = material->GetPixelShader();
+
+	vs->SetMatrix4x4("view", camera->GetViewMatrix());
+	vs->SetMatrix4x4("projection", camera->GetProjectionMatrix());
+	vs->SetShader();
+	vs->CopyAllBufferData();
+
+	ps->SetSamplerState("particleSampler", material->GetSamplerState());
+	ps->SetShaderResourceView("particle", material->GetDiffuse());
+	ps->SetShader();
+	ps->CopyAllBufferData();
+}
+
 void Entity::StartAllComponents()
 {
 	for (Component* component : m_components) {

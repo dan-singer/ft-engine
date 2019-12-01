@@ -79,12 +79,14 @@ void Game::LoadResources()
 	// Shaders
 	SimpleVertexShader* vs = world->CreateVertexShader("vs", device, context, L"VertexShader.cso");
 	SimplePixelShader* ps  = world->CreatePixelShader("ps", device, context, L"PixelShader.cso");
+	SimpleVertexShader* particleVs = world->CreateVertexShader("particle", device, context, L"ParticleVS.cso");
+	SimplePixelShader* particlePs = world->CreatePixelShader("particle", device, context, L"ParticlePS.cso");
 
 	// Textures
 	world->CreateTexture("leather", device, context, L"Assets/Textures/Leather.jpg");
 	world->CreateTexture("metal", device, context, L"Assets/Textures/BareMetal.png");
 	world->CreateTexture("velvet_normal", device, context, L"Assets/Textures/Velvet_N.jpg");
-
+	world->CreateTexture("particle", device, context, L"Assets/Textures/particle.jpg");
 
 	// Create the sampler state
 	D3D11_SAMPLER_DESC samplerDesc = {};
@@ -95,15 +97,50 @@ void Game::LoadResources()
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	world->CreateSamplerState("main", &samplerDesc, device);
 
-	world->CreateMaterial("leather", vs, ps, world->GetTexture("leather"), world->GetTexture("velvet_normal"), world->GetSamplerState("main"));
-	world->CreateMaterial("metal", vs, ps, world->GetTexture("metal"), world->GetTexture("velvet_normal"), world->GetSamplerState("main"));
-	world->GetMaterial("metal")->m_specColor = DirectX::XMFLOAT3(0.662124f, 0.654864f, 0.633732f);
-	world->GetMaterial("metal")->m_roughness = 1.0f;
-	world->GetMaterial("metal")->m_metalness = 0;
-
 	// UI
 	world->CreateSpriteBatch("main", context);
 	world->CreateFont("Open Sans", device, L"Assets/Fonts/open-sans.spritefont");
+
+
+	// Particles
+	D3D11_DEPTH_STENCIL_DESC particleDsDesc = {};
+	particleDsDesc.DepthEnable = true;
+	particleDsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO; // Disable depth writing
+	particleDsDesc.DepthFunc = D3D11_COMPARISON_LESS;
+	world->CreateDepthStencilState("particle", &particleDsDesc, device);
+
+	D3D11_BLEND_DESC particleBlendDesc = {};
+	particleBlendDesc.AlphaToCoverageEnable = false;
+	particleBlendDesc.IndependentBlendEnable = false;
+	particleBlendDesc.RenderTarget[0].BlendEnable = true;
+	particleBlendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	particleBlendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA; // Still respect pixel shader output alpha
+	particleBlendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+	particleBlendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	particleBlendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+	particleBlendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
+	particleBlendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	world->CreateBlendState("particle", &particleBlendDesc, device);
+
+	
+
+	// Materials
+	world->CreateMaterial("leather", vs, ps, world->GetTexture("leather"), world->GetTexture("velvet_normal"), world->GetSamplerState("main"));
+	Material* metal = world->CreateMaterial("metal", vs, ps, world->GetTexture("metal"), world->GetTexture("velvet_normal"), world->GetSamplerState("main"));
+	metal->m_specColor = DirectX::XMFLOAT3(0.662124f, 0.654864f, 0.633732f);
+	metal->m_roughness = 1.0f;
+	metal->m_metalness = 0;
+	world->CreateMaterial(
+		"particle",
+		particleVs,
+		particlePs,
+		world->GetTexture("particle"),
+		nullptr,
+		world->GetSamplerState("main"),
+		world->GetBlendState("particle"),
+		world->GetDepthStencilState("particle")
+	);
+
 }
 
 
@@ -185,6 +222,28 @@ void Game::CreateEntities()
 		}
 	);
 	
+	// Particle System Test
+	Entity* particleSystem = world->Instantiate("particle-system");
+	//particleSystem->AddComponent<EmitterComponent>()->Init(
+	//	110,
+	//	20,
+	//	5,
+	//	2.0f,
+	//	0.1f,
+	//	2.0f,
+	//	XMFLOAT4(1, 0.1f, 0.1f, 0.7f),
+	//	XMFLOAT4(1, 0.6f, 0.1f, 0),
+	//	XMFLOAT3(-2, 2, 0),
+	//	XMFLOAT3(0.2f, 0.2f, 0.2f),
+	//	XMFLOAT3(2, 0, 0),
+	//	XMFLOAT3(0.1f, 0.1f, 0.1f),
+	//	XMFLOAT4(-2, 2, -2, 2),
+	//	XMFLOAT3(0, 0, 0),				
+	//	device
+	//);
+	// Reading particle data from a configuration json file
+	particleSystem->AddComponent<EmitterComponent>()->Init("Assets/Particles/Explosion.json", device);
+	particleSystem->AddComponent<MaterialComponent>()->m_material = world->GetMaterial("particle");
 }
 
 // --------------------------------------------------------
