@@ -95,7 +95,7 @@ void Game::LoadResources()
 	world->CreateTexture("particle", device, context, L"Assets/Textures/particle.jpg");
 
 	//skyTexture
-	world->CreateCubeTexture("sky", device, context, L"Assets/Textures/spacebox.dds");
+	ID3D11ShaderResourceView* skyTex = world->CreateCubeTexture("sky", device, context, L"Assets/Textures/spacebox.dds");
 
 	// Create the sampler state
 	D3D11_SAMPLER_DESC samplerDesc = {};
@@ -146,8 +146,8 @@ void Game::LoadResources()
 	
 
 	// Materials
-	world->CreateMaterial("leather", vs, ps, world->GetTexture("leather"), world->GetTexture("velvet_normal"), world->GetSamplerState("main"));
-	Material* metal = world->CreateMaterial("metal", vs, ps, world->GetTexture("metal"), world->GetTexture("velvet_normal"), world->GetSamplerState("main"));
+	world->CreateMaterial("leather", vs, ps, world->GetTexture("leather"), world->GetTexture("velvet_normal"), skyTex, world->GetSamplerState("main"));
+	Material* metal = world->CreateMaterial("metal", vs, ps, world->GetTexture("metal"), world->GetTexture("velvet_normal"), skyTex, world->GetSamplerState("main"));
 	metal->m_specColor = DirectX::XMFLOAT3(0.662124f, 0.654864f, 0.633732f);
 	metal->m_roughness = 1.0f;
 	metal->m_metalness = 0;
@@ -156,6 +156,7 @@ void Game::LoadResources()
 		particleVs,
 		particlePs,
 		world->GetTexture("particle"),
+		nullptr,
 		nullptr,
 		world->GetSamplerState("main"),
 		world->GetBlendState("particle"),

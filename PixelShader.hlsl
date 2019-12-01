@@ -42,6 +42,7 @@ cbuffer externalData : register(b0)
 
 Texture2D diffuseTexture : register(t0);
 Texture2D normalTexture : register(t1);
+TextureCube reflectionTexture : register(t2);
 SamplerState samplerState : register(s0);
 static const float PI = 3.14159265f;
 
@@ -182,6 +183,9 @@ float4 main(VertexToPixel input) : SV_TARGET
 	float4 surfaceColor = diffuseTexture.Sample(samplerState, input.uv);
 	float4 normalVector = normalTexture.Sample(samplerState, input.uv);
 
+	float3 refl = reflect(-toCamera, input.normal);
+	float3 reflectionColor = reflectionTexture.Sample(samplerState, refl).rgb;
+
 	// === Normal mapping here!  We need a new normal for the rest of the lighting steps ====
 
 	// Expand (unpack) the normal from the normal map back to the [0,1]
@@ -208,8 +212,12 @@ float4 main(VertexToPixel input) : SV_TARGET
 			finalColor += spotLight(i, surfaceColor, input.normal, toCamera, input.worldPos);
 		}
     }
+
+	// Reflections
+	// Quick and dirty fake "fresnel" 
+	float nDotV = saturate(dot(input.normal, toCamera));
+	return float4(lerp(reflectionColor, finalColor, nDotV), 1);
 	
-	return finalColor;
 
 
 }

@@ -13,6 +13,7 @@ private:
 	SimplePixelShader* m_pixelShader;
 	ID3D11ShaderResourceView* m_diffuseSRV;
 	ID3D11ShaderResourceView* m_normalSRV;
+	ID3D11ShaderResourceView* m_reflectionSRV;
 	ID3D11SamplerState* m_samplerState;
 	ID3D11BlendState* m_blendState;
 	ID3D11DepthStencilState* m_depthStencilState;
@@ -32,6 +33,7 @@ public:
 		SimplePixelShader* pixelShader, 
 		ID3D11ShaderResourceView* diffuseSRV,
 		ID3D11ShaderResourceView* normalSRV,
+		ID3D11ShaderResourceView* reflectionSRV,
 		ID3D11SamplerState* samplerState,
 		ID3D11BlendState* blendState = nullptr,
 		ID3D11DepthStencilState* depthStencilState = nullptr
@@ -41,6 +43,7 @@ public:
 	SimplePixelShader*  GetPixelShader()  { return m_pixelShader;  }
 	ID3D11ShaderResourceView* GetDiffuse() { return m_diffuseSRV; }
 	ID3D11ShaderResourceView* GetNormals() { return m_normalSRV; }
+	ID3D11ShaderResourceView* GetReflectionSRV() { return m_reflectionSRV; }
 	ID3D11SamplerState* GetSamplerState() { return m_samplerState; }
 	ID3D11BlendState* GetBlendState() { return m_blendState; }
 	ID3D11DepthStencilState* GetDepthStencilState() { return m_depthStencilState; }

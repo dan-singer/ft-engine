@@ -145,8 +145,8 @@ public:
 	// Creates a Material and adds it to the internal Materials map
 	// --------------------------------------------------------
 	Material* CreateMaterial(const std::string& name, SimpleVertexShader* vertexShader, SimplePixelShader* pixelShader,
-		ID3D11ShaderResourceView* diffuseSRV, ID3D11ShaderResourceView* normalSRV, ID3D11SamplerState* samplerState,
-		ID3D11BlendState* blendState = nullptr, ID3D11DepthStencilState* depthStencilState = nullptr);
+		ID3D11ShaderResourceView* diffuseSRV, ID3D11ShaderResourceView* normalSRV, ID3D11ShaderResourceView* reflectionSRV,
+		ID3D11SamplerState* samplerState, ID3D11BlendState* blendState = nullptr, ID3D11DepthStencilState* depthStencilState = nullptr);
 	Material* GetMaterial(const std::string& name);
 
 	// --------------------------------------------------------
