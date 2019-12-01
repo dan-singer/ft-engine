@@ -35,43 +35,102 @@ cbuffer externalData : register(b0)
     float3 cameraPos;
 	int lightCount;
 	float shininess;
+	float metalness;
+	float roughness;
+	float3 specColor;
 };
 
 Texture2D diffuseTexture : register(t0);
 Texture2D normalTexture : register(t1);
+TextureCube reflectionTexture : register(t2);
 SamplerState samplerState : register(s0);
+static const float PI = 3.14159265f;
+
+//MicrofacetBRDF
+float SpecDistribution(float3 n, float3 h)
+{
+	//Pre-Calculations
+	float NdotH = saturate(dot(n, h));
+	float NdotH2 = NdotH * NdotH;
+	float a = roughness * roughness;
+	float a2 = max(a * a, 0);
+
+
+	float denomToSquare = NdotH2 * (a2 - 1) + 1;
+
+	return a2 / (PI * denomToSquare * denomToSquare);
+}
+
+float3 Fresnel(float3 v, float3 h, float3 f0)
+{
+	float VdotH = saturate(dot(v, h));
+
+	return f0 + (1 - f0) * pow(1 - VdotH, 5);
+}
+
+float GeometricShadowing(float3 n, float3 v, float3 h)
+{
+	float k = pow(roughness + 1, 2) / 8.0f;
+	float NdotV = saturate(dot(n, v));
+
+	return NdotV / (NdotV * (1 - k) + k);
+}
+
+
+float3 microFacet(float D, float3 F, float G, float NdotL, float NdotV)
+{
+	return (D * F * G / (4 * max(NdotV, NdotL)));
+}
+
+float3 DiffuseEnergyConserve(float diffuse, float3 specular)
+{
+	return diffuse * ((1 - normalize(specular)) * (1 - metalness));
+}
 
 float4 directionalLight(int index, float4 surfaceColor, float3 normal, float3 toCamera) 
 {
 	// Diffuse
 	float3 toLight = normalize(-lights[index].direction);
 	float NdotL = saturate(dot(toLight, normal)) * lights[index].intensity;
+	float NdotV = saturate(dot(toCamera, normal));
 	float4 diffuse = surfaceColor * float4(lights[index].color, 1) * NdotL;
 
 	// Specular
-	float3 h = normalize(toLight + toCamera);
-	float NdotH = saturate(dot(normal, h));
-	float specAmt = shininess > 0 ? pow(NdotH, shininess) : 0;
+	float3 h = saturate((toLight + toCamera) / 2);
+	
+	float D = SpecDistribution(normal, h);
+	float3 F = Fresnel(toCamera, h, specColor);
+	float G = GeometricShadowing(normal, toCamera, h) * GeometricShadowing(normal, toLight, h);
 
-	return diffuse + specAmt;
+	float3 specular = microFacet(D, F, G, NdotL, NdotV);
+	float3 conservedEnergy = DiffuseEnergyConserve(diffuse, specular);
+
+	return float4(conservedEnergy, 1);
 }
 
 float4 pointLight(int index, float4 surfaceColor, float3 normal, float3 toCamera, float3 worldPos)
 {
 	float3 lightDir = normalize(worldPos - lights[index].position);
 	float NdotL = saturate(dot(normal, -lightDir)) * lights[index].intensity;
+	float NdotV = saturate(dot(toCamera, normal));
 	float4 diffuse = surfaceColor * float4(lights[index].color, 1) * NdotL;
 
 	// Specular
-	float3 h = normalize(-lightDir + toCamera);
+	float3 h = normalize((-lightDir + toCamera) / 2);
 	float NdotH = saturate(dot(normal, h));
-	float specAmt = shininess > 0 ? pow(NdotH, shininess) : 0;
+
+	float D = SpecDistribution(normal, h);
+	float3 F = Fresnel(toCamera, h, specColor);
+	float G = GeometricShadowing(normal, toCamera, h) * GeometricShadowing(normal, lightDir, h);
+
+	float3 specular = microFacet(D, F, G, NdotL, NdotV);
+	float3 conservedEnergy = DiffuseEnergyConserve(diffuse, specular);
 
 	// Range-based attenuation
 	float dist = distance(worldPos, lights[index].position);
 	float att = saturate(1.0 - dist * dist / (lights[index].range * lights[index].range));
 
-	return att * (diffuse + specAmt);
+	return att * float4(conservedEnergy, 1);
 }
 
 float4 spotLight(int index, float4 surfaceColor, float3 normal, float3 toCamera, float3 worldPos)
@@ -79,21 +138,28 @@ float4 spotLight(int index, float4 surfaceColor, float3 normal, float3 toCamera,
 	float3 lightDir = normalize(worldPos - lights[index].position);
 
 	float NdotL = saturate(dot(normal, -lightDir)) * lights[index].intensity;
+	float NdotV = saturate(dot(toCamera, normal));
 	float4 diffuse = surfaceColor * float4(lights[index].color, 1) * NdotL;
 
 	float angleFromCenter = max(dot(-lightDir, lights[index].direction), 0.0f);
 	float spotAmount = pow(angleFromCenter, lights[index].spotFalloff) * lights[index].intensity;
 
 	// Specular
-	float3 h = normalize(-lightDir + toCamera);
+	float3 h = saturate((-lightDir + toCamera) / 2);
 	float NdotH = saturate(dot(normal, h));
-	float specAmt = shininess > 0 ? pow(NdotH, shininess) : 0;
+
+	float D = SpecDistribution(normal, h);
+	float3 F = Fresnel(toCamera, h, specColor);
+	float G = GeometricShadowing(normal, toCamera, h) * GeometricShadowing(normal, lightDir, h);
+
+	float3 specular = microFacet(D, F, G, NdotL, NdotV);
+	float3 conservedEnergy = DiffuseEnergyConserve(diffuse, specular);
 
 	// Range-based attenuation
 	float dist = distance(worldPos, lights[index].position);
 	float att = saturate(1.0 - dist * dist / (lights[index].range * lights[index].range));
 
-	return att * spotAmount * (diffuse + specAmt);
+	return att * spotAmount * float4(conservedEnergy, 1);
 }
 
 
@@ -116,6 +182,9 @@ float4 main(VertexToPixel input) : SV_TARGET
 
 	float4 surfaceColor = diffuseTexture.Sample(samplerState, input.uv);
 	float4 normalVector = normalTexture.Sample(samplerState, input.uv);
+
+	float3 refl = reflect(-toCamera, input.normal);
+	float3 reflectionColor = reflectionTexture.Sample(samplerState, refl).rgb;
 
 	// === Normal mapping here!  We need a new normal for the rest of the lighting steps ====
 
@@ -143,8 +212,12 @@ float4 main(VertexToPixel input) : SV_TARGET
 			finalColor += spotLight(i, surfaceColor, input.normal, toCamera, input.worldPos);
 		}
     }
+
+	// Reflections
+	// Quick and dirty fake "fresnel" 
+	float nDotV = saturate(dot(input.normal, toCamera));
+	return float4(lerp(reflectionColor, finalColor, nDotV), 1);
 	
-	return finalColor;
 
 
 }

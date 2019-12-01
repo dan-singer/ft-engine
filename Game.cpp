@@ -56,7 +56,6 @@ void Game::Init()
 {
 	LoadResources();
 	CreateEntities();	
-	World::GetInstance()->Start();
 	// Tell the input assembler stage of the pipeline what kind of
 	// geometric primitives (points, lines or triangles) we want to draw.  
 	// Essentially: "What kind of shape should the GPU draw with our data?"
@@ -73,12 +72,19 @@ void Game::LoadResources()
 {
 	World* world = World::GetInstance();
 
+	world->SetDevice(device);
+
 	// Meshes
 	world->CreateMesh("cube", "Assets/Models/cube.obj", device);
 
 	// Shaders
 	SimpleVertexShader* vs = world->CreateVertexShader("vs", device, context, L"VertexShader.cso");
-	SimplePixelShader* ps  = world->CreatePixelShader("ps", device, context, L"PixelShader.cso");
+	SimplePixelShader* uiPs = world->CreatePixelShader("ui", device, context, L"UIPixelShader.cso");
+	SimplePixelShader* ps = world->CreatePixelShader("ps", device, context, L"PixelShader.cso");
+	//sky shaders
+	SimpleVertexShader* vsSky = world->CreateVertexShader("vsSky", device, context, L"VSSkyBox.cso");
+	SimplePixelShader* psSky = world->CreatePixelShader("psSky", device, context, L"PSSkyBox.cso");
+	// Particle shaders
 	SimpleVertexShader* particleVs = world->CreateVertexShader("particle", device, context, L"ParticleVS.cso");
 	SimplePixelShader* particlePs = world->CreatePixelShader("particle", device, context, L"ParticlePS.cso");
 
@@ -87,6 +93,9 @@ void Game::LoadResources()
 	world->CreateTexture("metal", device, context, L"Assets/Textures/BareMetal.png");
 	world->CreateTexture("velvet_normal", device, context, L"Assets/Textures/Velvet_N.jpg");
 	world->CreateTexture("particle", device, context, L"Assets/Textures/particle.jpg");
+
+	//skyTexture
+	ID3D11ShaderResourceView* skyTex = world->CreateCubeTexture("sky", device, context, L"Assets/Textures/spacebox.dds");
 
 	// Create the sampler state
 	D3D11_SAMPLER_DESC samplerDesc = {};
@@ -97,6 +106,17 @@ void Game::LoadResources()
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	world->CreateSamplerState("main", &samplerDesc, device);
 
+	//Skybox stuff
+	D3D11_RASTERIZER_DESC rd = {};
+	rd.FillMode = D3D11_FILL_SOLID;
+	rd.CullMode = D3D11_CULL_FRONT;
+	world->CreateRasterizerState("skyRastState", &rd, device);
+
+	D3D11_DEPTH_STENCIL_DESC ds = {};
+	ds.DepthEnable = true;
+	ds.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	ds.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+	world->CreateDepthStencilState("skyDepthState", &ds, device);
 
 	// UI
 	world->CreateSpriteBatch("main", context);
@@ -126,13 +146,17 @@ void Game::LoadResources()
 	
 
 	// Materials
-	world->CreateMaterial("leather", vs, ps, world->GetTexture("leather"), world->GetTexture("velvet_normal"), world->GetSamplerState("main"));
-	world->CreateMaterial("metal", vs, ps, world->GetTexture("metal"), world->GetTexture("velvet_normal"), world->GetSamplerState("main"));
+	world->CreateMaterial("leather", vs, ps, world->GetTexture("leather"), world->GetTexture("velvet_normal"), skyTex, world->GetSamplerState("main"));
+	Material* metal = world->CreateMaterial("metal", vs, ps, world->GetTexture("metal"), world->GetTexture("velvet_normal"), skyTex, world->GetSamplerState("main"));
+	metal->m_specColor = DirectX::XMFLOAT3(0.662124f, 0.654864f, 0.633732f);
+	metal->m_roughness = 1.0f;
+	metal->m_metalness = 0;
 	world->CreateMaterial(
 		"particle",
 		particleVs,
 		particlePs,
 		world->GetTexture("particle"),
+		nullptr,
 		nullptr,
 		world->GetSamplerState("main"),
 		world->GetBlendState("particle"),
@@ -176,7 +200,7 @@ void Game::CreateEntities()
 	dirLightComp->m_data.color = XMFLOAT3(1.0f, 1.0f, 1.0f);
 	dirLightComp->m_data.intensity = 1.0f;
 	
-	Entity* pointLight = world->Instantiate("PointLight1");
+	/*Entity* pointLight = world->Instantiate("PointLight1");
 	LightComponent* pointLightComp = pointLight->AddComponent<LightComponent>();
 	pointLightComp->m_data.type = LightComponent::Point;
 	pointLightComp->m_data.color = XMFLOAT3(1.0f, 0, 0);
@@ -192,7 +216,7 @@ void Game::CreateEntities()
 	spotLight->GetTransform()->SetPosition(XMFLOAT3(1, 1, 0));
 	XMFLOAT4 spotLightRot;
 	XMStoreFloat4(&spotLightRot, XMQuaternionRotationRollPitchYaw(0, 90.0f, 0));
-	spotLight->GetTransform()->SetRotation(spotLightRot);
+	spotLight->GetTransform()->SetRotation(spotLightRot);*/
 
 	Entity* sprite = world->Instantiate("sprite");
 	sprite->AddComponent<UITransform>()->Init(Anchor::BOTTOM_RIGHT, 0, XMFLOAT2(1, 1), XMFLOAT2(.25f,.25f), XMFLOAT2(0, 0));
