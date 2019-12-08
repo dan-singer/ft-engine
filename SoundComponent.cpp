@@ -2,11 +2,16 @@
 #include "World.h"
 #include "Entity.h"
 
-void SoundComponent::Start()
+SoundComponent::SoundComponent(Entity* entity) : Component(entity)
 {
 	FMOD::System* system = World::GetInstance()->GetSoundSystem();
 	const char* channelName = GetOwner()->GetName().c_str();
 	system->createChannelGroup(channelName, &m_channelGroup);
+}
+
+void SoundComponent::Start()
+{
+
 }
 
 float SoundComponent::GetVolume()
@@ -20,27 +25,9 @@ void SoundComponent::SetVolume(float volume)
 	m_channelGroup->setVolume(m_volume);
 }
 
-bool SoundComponent::GetLoop()
-{
-	return m_loop;
-}
-
-void SoundComponent::SetLoop(bool loop)
-{
-	m_loop = loop;
-	if (m_loop) {
-		m_channelGroup->setMode(FMOD_LOOP_NORMAL);
-	}
-	else {
-		m_channelGroup->setMode(FMOD_LOOP_OFF);
-	}
-}
-
 void SoundComponent::SetSound(FMOD::Sound* sound)
 {
-	if (m_channelGroup) {
-		m_channelGroup->stop();
-	}
+	m_channelGroup->stop();
 	m_sound = sound;
 }
 
@@ -81,4 +68,9 @@ void SoundComponent::Stop()
 
 void SoundComponent::Tick(float deltaTime)
 {
+}
+
+SoundComponent::~SoundComponent()
+{
+	m_channelGroup->release();
 }

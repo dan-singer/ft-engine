@@ -13,6 +13,7 @@
 #include "UITextComponent.h"
 #include "ButtonComponent.h"
 #include <fmod/fmod.hpp>
+#include "SoundComponent.h"
 
 // For the DirectX Math library
 using namespace DirectX;
@@ -164,6 +165,8 @@ void Game::LoadResources()
 		world->GetDepthStencilState("particle")
 	);
 
+	// Audio
+	world->CreateSound("jump", "Assets/Audio/Jump.wav");
 }
 
 
@@ -187,6 +190,10 @@ void Game::CreateEntities()
 	ground->AddComponent<MeshComponent>()->m_mesh = world->GetMesh("cube");
 	ground->AddComponent<MaterialComponent>()->m_material = world->GetMaterial("metal");
 	ground->AddComponent<RigidBodyComponent>()->SetBoxCollider(.5f, .5f, .5f);
+	//SoundComponent* sc = ground->AddComponent<SoundComponent>();
+	//sc->SetSound(world->GetSound("jump"));
+	//sc->Play();
+
 
 	Entity* camera = world->Instantiate("Cam");
 	CameraComponent* cc = camera->AddComponent<CameraComponent>();

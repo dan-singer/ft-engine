@@ -11,15 +11,14 @@ private:
 	FMOD::Sound* m_sound = nullptr;
 	FMOD::ChannelGroup* m_channelGroup = nullptr;
 	float m_volume = 1.0f;
-	bool m_loop = false;
 public:
+
+	SoundComponent(Entity* entity);
+
 	virtual void Start() override;
 
 	float GetVolume();
 	void SetVolume(float volume);
-
-	bool GetLoop();
-	void SetLoop(bool loop);
 
 	// --------------------------------------------------------
 	// Sets the sound to be used for this component and 
@@ -40,5 +39,6 @@ public:
 
 	virtual void Tick(float deltaTime) override;
 
+	~SoundComponent();
 };
 
