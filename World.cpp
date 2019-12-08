@@ -29,6 +29,10 @@ World::World()
 	m_dynamicsWorld = new btDiscreteDynamicsWorld(m_dispatcher, m_overlappingPairCache, m_solver, m_collisionConfiguration);
 
 	m_dynamicsWorld->setGravity(m_gravity);
+
+	// FMOD sound setup
+	FMOD::System_Create(&m_soundSystem);
+	m_soundSystem->init(36, FMOD_INIT_NORMAL, nullptr);
 }
 
 World* World::GetInstance()
@@ -302,6 +306,19 @@ DirectX::SpriteFont* World::CreateFont(const std::string& name, ID3D11Device* de
 DirectX::SpriteFont* World::GetFont(const std::string& name)
 {
 	return m_fonts[name];
+}
+
+FMOD::Sound* World::CreateSound(const std::string& name, const char* path)
+{
+	FMOD::Sound* newSound;
+	m_soundSystem->createSound(path, FMOD_DEFAULT, 0, &newSound);
+	m_sounds[name] = newSound;
+	return newSound;
+}
+
+FMOD::Sound* World::GetSound(const std::string& name)
+{
+	return m_sounds[name];
 }
 
 void World::OnMouseDown(WPARAM buttonState, int x, int y)
@@ -693,4 +710,8 @@ World::~World()
 	for (const auto& pair : m_spriteBatches) {
 		delete pair.second;
 	}
+	for (const auto& pair : m_sounds) {
+		pair.second->release();
+	}
+	m_soundSystem->release();
 }

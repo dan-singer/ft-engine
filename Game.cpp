@@ -12,6 +12,7 @@
 #include <SpriteFont.h>
 #include "UITextComponent.h"
 #include "ButtonComponent.h"
+#include <fmod/fmod.hpp>
 
 // For the DirectX Math library
 using namespace DirectX;
