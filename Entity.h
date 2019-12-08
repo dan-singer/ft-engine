@@ -98,23 +98,6 @@ public:
 		return nullptr;
 	}
 
-	// --------------------------------------------------------
-	// Removes the component of type T from the Entity
-	// --------------------------------------------------------
-	template <class T>
-	void RemoveComponent()
-	{
-		int indexToRemove = -1;
-		for (int i = 0; i < m_components.size(); ++i) {
-			if (dynamic_cast<T*>(m_components[i])) {
-				indexToRemove = i;
-				break;
-			}
-		}
-		delete m_components[indexToRemove]; // Garbage collection
-		m_components.erase(m_components.begin() + indexToRemove);
-		
-	}
 
 	std::string GetName() { return m_name; }
 	void SetName(const std::string& name) { m_name = name; }

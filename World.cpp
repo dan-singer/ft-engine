@@ -325,7 +325,9 @@ void World::OnMouseDown(WPARAM buttonState, int x, int y)
 {
 	for (Entity* entity : m_entities) {
 		for (Component* component : entity->GetAllComponents()) {
-			component->OnMouseDown(buttonState, x, y);
+			if (component->GetEnabled()) {
+				component->OnMouseDown(buttonState, x, y);
+			}
 		}
 	}
 }
@@ -334,7 +336,9 @@ void World::OnMouseUp(WPARAM buttonState, int x, int y)
 {
 	for (Entity* entity : m_entities) {
 		for (Component* component : entity->GetAllComponents()) {
-			component->OnMouseUp(buttonState, x, y);
+			if (component->GetEnabled()) {
+				component->OnMouseUp(buttonState, x, y);
+			}
 		}
 	}
 }
@@ -343,7 +347,9 @@ void World::OnMouseMove(WPARAM buttonState, int x, int y)
 {
 	for (Entity* entity : m_entities) {
 		for (Component* component : entity->GetAllComponents()) {
-			component->OnMouseMove(buttonState, x, y);
+			if (component->GetEnabled()) {
+				component->OnMouseMove(buttonState, x, y);
+			}
 		}
 	}
 }
@@ -352,7 +358,9 @@ void World::OnMouseWheel(float wheelDelta, int x, int y)
 {
 	for (Entity* entity : m_entities) {
 		for (Component* component : entity->GetAllComponents()) {
-			component->OnMouseWheel(wheelDelta, x, y);
+			if (component->GetEnabled()) {
+				component->OnMouseWheel(wheelDelta, x, y);
+			}
 		}
 	}
 }
@@ -361,7 +369,9 @@ void World::OnResize(int width, int height)
 {
 	for (Entity* entity : m_entities) {
 		for (Component* component : entity->GetAllComponents()) {
-			component->OnResize(width, height);
+			if (component->GetEnabled()) {
+				component->OnResize(width, height);
+			}
 		}
 	}
 }
@@ -389,29 +399,41 @@ void World::Tick(float deltaTime)
 		if (m_collisionMap.count(body0) == 0) {
 			m_collisionMap[body0] = std::set<const btCollisionObject*>();
 			for (Component* component : e0->GetAllComponents()) {
-				component->OnCollisionBegin(e1);
+				if (component->GetEnabled()) {
+					component->OnCollisionBegin(e1);
+				}
 			}
 			for (Component* component : e1->GetAllComponents()) {
-				component->OnCollisionBegin(e0);
+				if (component->GetEnabled()) {
+					component->OnCollisionBegin(e0);
+				}
 			}
 		}
 		else if (m_collisionMap[body0].count(body1) == 0) {
 			m_collisionMap[body0].insert(body1);
 			for (Component* component : e0->GetAllComponents()) {
-				component->OnCollisionBegin(e1);
+				if (component->GetEnabled()) {
+					component->OnCollisionBegin(e1);
+				}
 			}
 			for (Component* component : e1->GetAllComponents()) {
-				component->OnCollisionBegin(e0);
+				if (component->GetEnabled()) {
+					component->OnCollisionBegin(e0);
+				}
 			}
 		}
 		// Recurring collision callback
 		else {
 			// Collision callback triggered each frame of the collision
 			for (Component* component : e0->GetAllComponents()) {
-				component->OnCollisionStay(e1);
+				if (component->GetEnabled()) {
+					component->OnCollisionStay(e1);
+				}
 			}
 			for (Component* component : e1->GetAllComponents()) {
-				component->OnCollisionStay(e0);
+				if (component->GetEnabled()) {
+					component->OnCollisionStay(e0);
+				}
 			}
 		}
 		// Update the snapshot
@@ -430,10 +452,14 @@ void World::Tick(float deltaTime)
 			for (const btCollisionObject* coll : m_collisionMap[pair.first]) {
 				Entity* e1 = static_cast<Entity*>(coll->getUserPointer());
 				for (Component* component : e0->GetAllComponents()) {
-					component->OnCollisionEnd(e1);
+					if (component->GetEnabled()) {
+						component->OnCollisionEnd(e1);
+					}
 				}
 				for (Component* component : e1->GetAllComponents()) {
-					component->OnCollisionEnd(e0);
+					if (component->GetEnabled()) {
+						component->OnCollisionEnd(e0);
+					}
 				}
 			}
 		}
@@ -444,10 +470,14 @@ void World::Tick(float deltaTime)
 				if (collisionSnapshot[pair.first].count(coll) == 0) {
 					Entity* e1 = static_cast<Entity*>(coll->getUserPointer());
 					for (Component* component : e0->GetAllComponents()) {
-						component->OnCollisionEnd(e1);
+						if (component->GetEnabled()) {
+							component->OnCollisionEnd(e1);
+						}
 					}
 					for (Component* component : e1->GetAllComponents()) {
-						component->OnCollisionEnd(e0);
+						if (component->GetEnabled()) {
+							component->OnCollisionEnd(e0);
+						}
 					}
 				}
 			}
@@ -458,7 +488,9 @@ void World::Tick(float deltaTime)
 
 	for (Entity* entity : m_entities) {
 		for (Component* component : entity->GetAllComponents()) {
-			component->Tick(deltaTime);
+			if (component->GetEnabled()) {
+				component->Tick(deltaTime);
+			}
 		}
 	}
 
