@@ -15,6 +15,7 @@
 #include <SpriteBatch.h>
 #include <SpriteFont.h>
 #include <CommonStates.h>
+#include <fmod/fmod.hpp>
 class CameraComponent;
 class Entity;
 
@@ -40,11 +41,13 @@ private:
 	std::map<std::string, ID3D11BlendState*> m_blendStates;
 	std::map<std::string, DirectX::SpriteBatch*> m_spriteBatches;
 	std::map<std::string, DirectX::SpriteFont*> m_fonts;
+	std::map<std::string, FMOD::Sound*> m_sounds;
 	std::queue<Entity*> m_spawnQueue;
 	std::queue<Entity*> m_destroyQueue;
 	LightComponent::Light m_lights[MAX_LIGHTS];
 	int m_activeLightCount = 0;
 	ID3D11Device* m_device = nullptr;
+	FMOD::System* m_soundSystem = nullptr;
 
 	// Bullet
 	btDefaultCollisionConfiguration* m_collisionConfiguration;
@@ -90,6 +93,8 @@ public:
 		m_states = new DirectX::CommonStates(device);
 	}
 	ID3D11Device* GetDevice() { return m_device; }
+
+	FMOD::System* GetSoundSystem() { return m_soundSystem; }
 
 	// --------------------------------------------------------
 	// Create an Entity in the world. 
@@ -155,7 +160,9 @@ public:
 	ID3D11ShaderResourceView* CreateTexture(const std::string& name, ID3D11Device* device, ID3D11DeviceContext* context, const wchar_t* fileName);
 	ID3D11ShaderResourceView* GetTexture(const std::string& name);
 
-	//create a different shader resorce veiw and returns it
+	// --------------------------------------------------------
+	// Creates a cube texture shader resource view and returns it
+	// --------------------------------------------------------
 	ID3D11ShaderResourceView* CreateCubeTexture(const std::string& name, ID3D11Device* device, ID3D11DeviceContext* context, const wchar_t* fileName);
 	ID3D11ShaderResourceView* GetCubeTexture(const std::string& name);
 
@@ -165,7 +172,9 @@ public:
 	ID3D11SamplerState* CreateSamplerState(const std::string& name, D3D11_SAMPLER_DESC* description, ID3D11Device* device);
 	ID3D11SamplerState* GetSamplerState(const std::string& name);
 
-	//create rast state
+	// --------------------------------------------------------
+	// Create a rasterizer state and stores it in the internal map
+	// --------------------------------------------------------
 	ID3D11RasterizerState* CreateRasterizerState(const std::string& name, D3D11_RASTERIZER_DESC* description, ID3D11Device* device);
 	ID3D11RasterizerState* GetRasterizerState(const std::string& name);
 
@@ -193,6 +202,12 @@ public:
 	// --------------------------------------------------------
 	DirectX::SpriteFont* CreateFont(const std::string& name, ID3D11Device* device, const wchar_t* path);
 	DirectX::SpriteFont* GetFont(const std::string& name);
+
+	// --------------------------------------------------------
+	// Create a Sound resource and store it in the internal map
+	// --------------------------------------------------------
+	FMOD::Sound* CreateSound(const std::string& name, const char* path);
+	FMOD::Sound* GetSound(const std::string& name);
 
 
 	// Lifecycle methods for Entities
