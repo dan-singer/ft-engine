@@ -5,7 +5,7 @@ The FT Engine is a Component-based DirectX 11 Game Engine.
 Everything about the engine is based on Components. To add functionality to `Entities`, create a new class that extends the base `Component` class. 
 
 ## The World
-All resources and Entities are managed through a `World` singleton. Do not attempt to create entities or ressources manually. Use the `World` for this. This way, memory leaks can be avoided.
+All resources and Entities are managed through a `World` singleton. Do not attempt to create entities or resources manually. Use the `World` for this. This way, memory leaks can be avoided.
 
 ## Transform
 Each Entity comes with a `Transform` component out of the box, which can be used to manipulate the postion, rotation, and scale of entities.
