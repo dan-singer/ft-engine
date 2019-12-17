@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{7B07137C-8E03-4F0C-BEDA-4C9915CD667C}</ProjectGuid>
-    <RootNamespace>DX11Starter</RootNamespace>
+    <RootNamespace>FTEngine</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
